@@ -108,7 +108,7 @@ export const Login: React.FC = () => {
               </Link>
             </p>
             <p className="text-xs text-gray-400 mt-2">
-              Demo: doctor@dental.com / password
+              Example: doctor@dental.com / password
             </p>
           </div>
         </div>
