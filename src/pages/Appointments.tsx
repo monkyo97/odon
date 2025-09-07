@@ -13,8 +13,8 @@ export const Appointments: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const filteredAppointments = appointments.filter(appointment => {
-    const matchesSearch = appointment.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         appointment.procedure.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = appointment?.patientName?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+                         appointment?.procedur?e.toLowerCase().includes(searchTerm?.toLowerCase());
     const matchesStatus = statusFilter === 'all' || appointment.status === statusFilter;
     const matchesDate = view === 'calendar' ? appointment.date === selectedDate : true;
     
