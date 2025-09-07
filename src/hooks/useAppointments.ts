@@ -47,10 +47,13 @@ export const useAppointments = () => {
     if (!user) return;
 
     try {
+      console.log('appointmentData', appointmentData )
       const { data, error } = await supabase
         .from('appointments')
         .insert([{
           ...appointmentData,
+          patient_name: appointmentData.patientName,
+          patient_phone:  appointmentData.patientPhone,
           dentist: user.name
         }])
         .select()
