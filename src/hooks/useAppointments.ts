@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export interface Appointment {
   id: string;
-  patientId: string; //DB: patient_id
+  patientId?: string; //DB: patient_id
   patientName: string; //DB: patient_name
   patientPhone: string; //DB: patient_phone
   date: string;
@@ -35,7 +35,25 @@ export const useAppointments = () => {
         .order('time', { ascending: true });
 
       if (error) throw error;
-      setAppointments(data || []);
+      
+      // Format the data to match our interface
+      const formattedAppointments = (data || []).map(item => ({
+        id: item.id,
+        patientId: item.patient_id,
+        patientName: item.patient_name,
+        patientPhone: item.patient_phone,
+        date: item.date,
+        time: item.time,
+        duration: item.duration,
+        procedure: item.procedure,
+        status: item.status,
+        notes: item.notes,
+        dentist: item.dentist,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+      
+      setAppointments(formattedAppointments);
     } catch (error) {
       console.error('Error fetching appointments:', error);
     } finally {
@@ -47,12 +65,10 @@ export const useAppointments = () => {
     if (!user) return;
 
     try {
-      console.log('appointmentData', appointmentData )
-      console.log({userData: user })
       const { data, error } = await supabase
         .from('appointments')
         .insert([{
-          //...appointmentData,
+          patient_id: appointmentData.patientId || null,
           time: appointmentData.time,
           date: appointmentData.date,
           duration: appointmentData.duration,
@@ -68,7 +84,24 @@ export const useAppointments = () => {
 
       if (error) throw error;
       
-      setAppointments(prev => [...prev, data]);
+      // Format the response to match our interface
+      const formattedAppointment = {
+        id: data.id,
+        patientId: data.patient_id,
+        patientName: data.patient_name,
+        patientPhone: data.patient_phone,
+        date: data.date,
+        time: data.time,
+        duration: data.duration,
+        procedure: data.procedure,
+        status: data.status,
+        notes: data.notes,
+        dentist: data.dentist,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+      
+      setAppointments(prev => [...prev, formattedAppointment]);
       return data;
     } catch (error) {
       console.error('Error creating appointment:', error);

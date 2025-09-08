@@ -53,7 +53,6 @@ export const usePatients = () => {
     emergencyContact: string;
     emergencyPhone: string;
   }) => {
-    console.log('user patientData', patientData)
     if (!user) return;
 
     try {
@@ -73,8 +72,6 @@ export const usePatients = () => {
         .select()
         .single();
 
-    console.log('data createPatient', data)
-    console.log('error createPatient', error)
       if (error) throw error;
       
       setPatients(prev => [data, ...prev]);
@@ -137,7 +134,10 @@ export const usePatients = () => {
     console.error('Error searching patients:', error);
   }
 };
-
+  
+  const getPatientById = (id: string) => {
+    return patients.find(patient => patient.id === id);
+  };
 
   useEffect(() => {
     fetchPatients();
@@ -151,6 +151,7 @@ export const usePatients = () => {
     deletePatient,
     searchPatient,
     patientsList,
+    getPatientById,
     refetch: fetchPatients
   };
 };

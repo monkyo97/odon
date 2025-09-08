@@ -5,6 +5,7 @@ import { Odontogram } from '../components/Odontogram';
 import { PatientInfo } from '../components/PatientInfo';
 import { TreatmentHistory } from '../components/TreatmentHistory';
 import { usePatients } from '../hooks/usePatients';
+import { PatientAppointments } from '../components/PatientAppointments';
 
 export const PatientDetail: React.FC = () => {
   const { id } = useParams();
@@ -89,12 +90,7 @@ export const PatientDetail: React.FC = () => {
             <div className="p-6">
               {activeTab === 'odontogram' && <Odontogram patientId={patient.id} />}
               {activeTab === 'history' && <TreatmentHistory patientId={patient.id} />}
-              {activeTab === 'appointments' && (
-                <div className="text-center py-12">
-                  <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Gestión de citas próximamente disponible</p>
-                </div>
-              )}
+              {activeTab === 'appointments' && <PatientAppointments patientId={patient.id} />}
             </div>
           </div>
         </div>

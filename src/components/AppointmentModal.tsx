@@ -10,6 +10,7 @@ interface AppointmentModalProps {
 
 export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
+    patientId: '',
     patientName: '',
     patientPhone: '',
     date: '',
@@ -21,9 +22,35 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isNewPatient, setIsNewPatient] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredPatients, setFilteredPatients] = useState<any[]>([]);
 
-  const { searchPatient, patientsList } = usePatients(); 
+  const { patients } = usePatients();
+  
+  // Filter patients based on search term
+  React.useEffect(() => {
+    if (searchTerm) {
+      const filtered = patients.filter(patient =>
+        patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        patient.phone.includes(searchTerm)
+      );
+      setFilteredPatients(filtered);
+    } else {
+      setFilteredPatients(patients);
+    }
+  }, [searchTerm, patients]);
+  
   if (!isOpen) return null;
+
+  const handlePatientSelect = (patient: any) => {
+    setFormData({
+      ...formData,
+      patientId: patient.id,
+      patientName: patient.name,
+      patientPhone: patient.phone
+    });
+    setSearchTerm(patient.name);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +63,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
       });
       onClose();
       setFormData({
+        patientId: '',
         patientName: '',
         patientPhone: '',
         date: '',
@@ -45,6 +73,8 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
         notes: '',
         status: 'scheduled'
       });
+      setSearchTerm('');
+      setIsNewPatient(true);
     } catch (error) {
       console.error('Error creating appointment:', error);
       alert('Error al crear la cita. Inténtalo de nuevo.');
@@ -134,29 +164,75 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                   </div>
                 </div>
               ) : (
-                // Select para paciente existente
+                // Search input para paciente existente
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Selecciona paciente
+                    Buscar paciente *
                   </label>
-                  <select
-                    className="w-full pl-3 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    value={formData.patientName}
-                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
-                    onFocus={() => searchPatient('')} // cargar todos al enfocar
-                  >
-                    <option value="">-- Selecciona paciente --</option>
-                    {patientsList.map((p) => (
-                      <option key={p.id} value={p.name}>
-                        {p.name} {p.phone ? `- ${p.phone}` : ''}
-                      </option>
-                    ))}
-                  </select>
-
-                  {formData.patientName && (
-                    <p className="mt-2 text-sm text-gray-500">
-                      Paciente seleccionado: {formData.patientName}
-                    </p>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Buscar por nombre o teléfono..."
+                      required
+                    />
+                  </div>
+                  
+                  {/* Dropdown de resultados */}
+                  {searchTerm && !formData.patientId && filteredPatients.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {filteredPatients.map((patient) => (
+                        <button
+                          key={patient.id}
+                          type="button"
+                          onClick={() => handlePatientSelect(patient)}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="font-medium text-gray-900">{patient.name}</div>
+                          <div className="text-sm text-gray-600">{patient.phone} • {patient.email}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {searchTerm && !formData.patientId && filteredPatients.length === 0 && (
+                    <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-800">
+                        No se encontraron pacientes. ¿Deseas crear uno nuevo?
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsNewPatient(true);
+                          setFormData({ ...formData, patientName: searchTerm });
+                          setSearchTerm('');
+                        }}
+                        className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        Crear paciente nuevo
+                      </button>
+                    </div>
+                  )}
+                  
+                  {formData.patientId && (
+                    <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-800">
+                        ✓ Paciente seleccionado: {formData.patientName}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, patientId: '', patientName: '', patientPhone: '' });
+                          setSearchTerm('');
+                        }}
+                        className="mt-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        Cambiar paciente
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -174,6 +250,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                   onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="+34 666 123 456"
+                  disabled={!isNewPatient && formData.patientId}
                 />
               </div>
             </div>

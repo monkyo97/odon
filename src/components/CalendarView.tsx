@@ -3,7 +3,7 @@ import { Clock, User, Phone } from 'lucide-react';
 
 interface Appointment {
   id: string;
-  patientId: string;
+  patientId?: string;
   patientName: string;
   patientPhone: string;
   date: string;
