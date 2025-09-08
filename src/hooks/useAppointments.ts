@@ -4,9 +4,9 @@ import { useAuth } from '../contexts/AuthContext';
 
 export interface Appointment {
   id: string;
-  patient_id: string;
-  patient_name: string;
-  patient_phone: string;
+  patientId: string; //DB: patient_id
+  patientName: string; //DB: patient_name
+  patientPhone: string; //DB: patient_phone
   date: string;
   time: string;
   duration: number;

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Calendar, Clock, User, FileText, Save, Phone } from 'lucide-react';
+import { usePatients } from '../hooks/usePatients';
 
 interface AppointmentModalProps {
   isOpen: boolean;
@@ -19,7 +20,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
     status: 'scheduled'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isNewPatient, setIsNewPatient] = useState(true);
 
+  const { searchPatient, patientsList } = usePatients(); 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,19 +92,74 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Paciente *
+                ¿Es paciente nuevo?
               </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <input
-                  type="text"
-                  value={formData.patientName}
-                  onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Nombre del paciente"
-                  required
-                />
+              <div className="flex space-x-4 mb-4">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="isNewPatient"
+                    checked={isNewPatient}
+                    onChange={() => setIsNewPatient(true)}
+                  />
+                  <span>Sí</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="isNewPatient"
+                    checked={!isNewPatient}
+                    onChange={() => setIsNewPatient(false)}
+                  />
+                  <span>No</span>
+                </label>
               </div>
+
+              {isNewPatient ? (
+                // Input para paciente nuevo
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nombre del paciente *
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <input
+                      type="text"
+                      value={formData.patientName}
+                      onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Nombre del paciente"
+                      required
+                    />
+                  </div>
+                </div>
+              ) : (
+                // Select para paciente existente
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Selecciona paciente
+                  </label>
+                  <select
+                    className="w-full pl-3 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formData.patientName}
+                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                    onFocus={() => searchPatient('')} // cargar todos al enfocar
+                  >
+                    <option value="">-- Selecciona paciente --</option>
+                    {patientsList.map((p) => (
+                      <option key={p.id} value={p.name}>
+                        {p.name} {p.phone ? `- ${p.phone}` : ''}
+                      </option>
+                    ))}
+                  </select>
+
+                  {formData.patientName && (
+                    <p className="mt-2 text-sm text-gray-500">
+                      Paciente seleccionado: {formData.patientName}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>

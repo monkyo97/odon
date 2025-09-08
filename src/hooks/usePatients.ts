@@ -22,6 +22,7 @@ export interface Patient {
 export const usePatients = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [patientsList, setPatientsList] = useState<Patient[]>([]);
   const { user } = useAuth();
 
   const fetchPatients = async () => {
@@ -123,6 +124,21 @@ export const usePatients = () => {
     }
   };
 
+  const searchPatient = async (query: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('patients')
+      .select('*')
+      .ilike('name', `%${query}%`);
+
+    if (error) throw error;
+    setPatientsList(data || []);
+  } catch (error) {
+    console.error('Error searching patients:', error);
+  }
+};
+
+
   useEffect(() => {
     fetchPatients();
   }, [user]);
@@ -133,6 +149,8 @@ export const usePatients = () => {
     createPatient,
     updatePatient,
     deletePatient,
+    searchPatient,
+    patientsList,
     refetch: fetchPatients
   };
 };
