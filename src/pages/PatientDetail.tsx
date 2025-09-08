@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Edit, Calendar, FileText, Bluetooth as Tooth } from 'lucide-react';
+import { ArrowLeft, Edit, Calendar, FileText, Bluetooth as Tooth, Trash2 } from 'lucide-react';
 import { Odontogram } from '../components/Odontogram';
 import { PatientInfo } from '../components/PatientInfo';
 import { TreatmentHistory } from '../components/TreatmentHistory';
+import { EditPatientModal } from '../components/EditPatientModal';
 import { usePatients } from '../hooks/usePatients';
 import { PatientAppointments } from '../components/PatientAppointments';
 
 export const PatientDetail: React.FC = () => {
   const { id } = useParams();
-  const { patients, loading } = usePatients();
+  const { patients, loading, updatePatient, deletePatient } = usePatients();
   const [activeTab, setActiveTab] = useState<'odontogram' | 'history' | 'appointments'>('odontogram');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const patient = patients.find(p => p.id === id);
 
@@ -32,6 +34,35 @@ export const PatientDetail: React.FC = () => {
       </div>
     );
   }
+
+  const handleUpdatePatient = async (updates: any) => {
+    if (!patient) return;
+    try {
+      await updatePatient(patient.id, updates);
+    } catch (error) {
+      console.error('Error updating patient:', error);
+      throw error;
+    }
+  };
+
+  const handleDeletePatient = async () => {
+    if (!patient) return;
+    
+    const confirmDelete = window.confirm(
+      `¿Estás seguro de que deseas eliminar al paciente ${patient.name}? Esta acción no se puede deshacer y eliminará todos los datos asociados (citas, tratamientos, odontograma).`
+    );
+    
+    if (confirmDelete) {
+      try {
+        await deletePatient(patient.id);
+        // Redirect to patients list after deletion
+        window.location.href = '/patients';
+      } catch (error) {
+        console.error('Error deleting patient:', error);
+        alert('Error al eliminar el paciente. Inténtalo de nuevo.');
+      }
+    }
+  };
 
   const tabs = [
     { id: 'odontogram', label: 'Odontograma', icon: Tooth },
@@ -55,10 +86,22 @@ export const PatientDetail: React.FC = () => {
           </div>
         </div>
         
-        <button className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-          <Edit className="h-4 w-4 mr-2" />
-          Editar Paciente
-        </button>
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={() => setIsEditModalOpen(true)}
+            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Editar
+          </button>
+          <button 
+            onClick={handleDeletePatient}
+            className="flex items-center bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Eliminar
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -95,6 +138,13 @@ export const PatientDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <EditPatientModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        patient={patient}
+        onSave={handleUpdatePatient}
+      />
     </div>
   );
 };

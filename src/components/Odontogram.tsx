@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { ToothSVG } from './ToothSVG';
 import { ConditionModal } from './ConditionModal';
+import { EditConditionModal } from './EditConditionModal';
 import { useToothConditions } from '../hooks/useToothConditions';
+import { Edit, Trash2, Plus } from 'lucide-react';
 
 export interface ToothCondition {
   id: string;
@@ -20,7 +22,9 @@ interface OdontogramProps {
 export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
   const [selectedTooth, setSelectedTooth] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { conditions, loading, createCondition } = useToothConditions(patientId);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedCondition, setSelectedCondition] = useState<ToothCondition | null>(null);
+  const { conditions, loading, createCondition, updateCondition, deleteCondition } = useToothConditions(patientId);
 
   // Adult teeth numbering (FDI notation)
   const upperTeeth = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
@@ -36,8 +40,74 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
   };
 
   const handleAddCondition = async (condition: ToothCondition) => {
-    await createCondition(condition);
-    setIsModalOpen(false);
+    try {
+      await createCondition(condition);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error adding condition:', error);
+      alert('Error al agregar la condición');
+    }
+  };
+
+  const handleEditCondition = (condition: ToothCondition) => {
+    setSelectedCondition(condition);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateCondition = async (updatedCondition: ToothCondition) => {
+    try {
+      await updateCondition(updatedCondition.id, updatedCondition);
+      setIsEditModalOpen(false);
+      setSelectedCondition(null);
+    } catch (error) {
+      console.error('Error updating condition:', error);
+      alert('Error al actualizar la condición');
+    }
+  };
+
+  const handleDeleteCondition = async (conditionId: string) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta condición?')) {
+      try {
+        await deleteCondition(conditionId);
+      } catch (error) {
+        console.error('Error deleting condition:', error);
+        alert('Error al eliminar la condición');
+      }
+    }
+  };
+
+  const getConditionLabel = (condition: string) => {
+    const labels = {
+      caries: 'Caries',
+      restauracion: 'Restauración',
+      corona: 'Corona',
+      endodoncia: 'Endodoncia',
+      extraccion: 'Extracción',
+      implante: 'Implante',
+      fractura: 'Fractura'
+    };
+    return labels[condition as keyof typeof labels] || condition;
+  };
+
+  const getSurfaceLabel = (surface: string) => {
+    const labels = {
+      oclusal: 'Oclusal',
+      vestibular: 'Vestibular',
+      lingual: 'Lingual',
+      mesial: 'Mesial',
+      distal: 'Distal',
+      incisal: 'Incisal'
+    };
+    return labels[surface as keyof typeof labels] || surface;
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels = {
+      planificado: 'Planificado',
+      en_proceso: 'En Proceso',
+      completado: 'Completado'
+    };
+    return labels[status as keyof typeof labels] || status;
   };
 
   return (
@@ -115,7 +185,13 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
 
       {/* Conditions Summary */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h4 className="text-lg font-semibold text-gray-900 mb-4">Condiciones Registradas</h4>
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-lg font-semibold text-gray-900">Condiciones Registradas</h4>
+          <span className="text-sm text-gray-500">
+            {conditions.length} condición{conditions.length !== 1 ? 'es' : ''}
+          </span>
+        </div>
+        
         {loading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -123,27 +199,59 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
         ) : conditions.length > 0 ? (
           <div className="space-y-3">
             {conditions.map((condition) => (
-              <div key={condition.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <span className="font-medium text-gray-900">Pieza {condition.toothNumber}</span>
-                  <span className="text-gray-500 mx-2">•</span>
-                  <span className="text-gray-700 capitalize">{condition.surface}</span>
-                  <span className="text-gray-500 mx-2">•</span>
-                  <span className="text-gray-700 capitalize">{condition.condition}</span>
+              <div key={condition.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <span className="font-medium text-gray-900">Pieza {condition.toothNumber}</span>
+                    <span className="text-gray-500">•</span>
+                    <span className="text-gray-700">{getSurfaceLabel(condition.surface)}</span>
+                    <span className="text-gray-500">•</span>
+                    <span className="text-gray-700">{getConditionLabel(condition.condition)}</span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4 text-sm text-gray-600">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      condition.status === 'completado' ? 'bg-green-100 text-green-800' :
+                      condition.status === 'en_proceso' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {getStatusLabel(condition.status)}
+                    </span>
+                    <span>{new Date(condition.date).toLocaleDateString('es-ES')}</span>
+                  </div>
+                  
+                  {condition.notes && (
+                    <p className="text-sm text-gray-600 mt-2">{condition.notes}</p>
+                  )}
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  condition.status === 'completado' ? 'bg-green-100 text-green-800' :
-                  condition.status === 'en_proceso' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {condition.status === 'completado' ? 'Completado' :
-                   condition.status === 'en_proceso' ? 'En Proceso' : 'Planificado'}
-                </span>
+                
+                <div className="flex items-center space-x-2 ml-4">
+                  <button
+                    onClick={() => handleEditCondition(condition)}
+                    className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="Editar condición"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCondition(condition.id)}
+                    className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Eliminar condición"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 text-center py-8">No hay condiciones registradas</p>
+          <div className="text-center py-8">
+            <div className="text-gray-400 mb-4">
+              <Plus className="h-12 w-12 mx-auto" />
+            </div>
+            <p className="text-gray-500 mb-2">No hay condiciones registradas</p>
+            <p className="text-sm text-gray-400">Haz clic en cualquier diente para agregar una condición</p>
+          </div>
         )}
       </div>
 
@@ -152,6 +260,16 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
         onClose={() => setIsModalOpen(false)}
         toothNumber={selectedTooth}
         onSave={handleAddCondition}
+      />
+
+      <EditConditionModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedCondition(null);
+        }}
+        condition={selectedCondition}
+        onSave={handleUpdateCondition}
       />
     </div>
   );
