@@ -136,11 +136,7 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
       <AppointmentModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onSave={createAppointment}
-      />
-    </div>
-  );
-};
+        onSave={(appointmentData) => {
           // Pre-fill patient data if we have it
           const dataWithPatient = {
             ...appointmentData,
