@@ -136,18 +136,7 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
       <AppointmentModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onSave={(appointmentData) => {
-          // Pre-fill patient data if we have it
-          const dataWithPatient = {
-            ...appointmentData,
-            patientId: patient?.id,
-            patientName: patient?.name || appointmentData.patientName,
-            patientPhone: patient?.phone || appointmentData.patientPhone
-          };
-          
-          // This would need to be connected to the appointments hook
-          console.log('Creating appointment for patient:', dataWithPatient);
-        }}
+        onSave={createAppointment}
       />
     </div>
   );
