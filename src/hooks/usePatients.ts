@@ -84,6 +84,8 @@ export const usePatients = () => {
 
   const updatePatient = async (id: string, updates: Partial<Patient>) => {
     try {
+      console.log({id: id});
+      console.log({updates :updates});
       const { data, error } = await supabase
         .from('patients')
         .update(updates)
