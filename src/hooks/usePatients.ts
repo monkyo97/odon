@@ -93,6 +93,7 @@ export const usePatients = () => {
         .select()
         .single();
 
+      console.log('error', error);
       if (error) throw error;
       
       setPatients(prev => 
