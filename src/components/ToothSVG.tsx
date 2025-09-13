@@ -16,76 +16,150 @@ export const ToothSVG: React.FC<ToothSVGProps> = ({
 }) => {
   const getConditionColor = (condition: string) => {
     const colors = {
-      caries: '#EF4444',      // Red
-      restauracion: '#3B82F6', // Blue
-      corona: '#F59E0B',       // Yellow
-      endodoncia: '#8B5CF6',   // Purple
-      extraccion: '#6B7280',   // Gray
-      implante: '#10B981',     // Green
-      fractura: '#F97316'      // Orange
+      caries: '#EF4444',                    // Red
+      restauracion: '#3B82F6',             // Blue
+      corona: '#F59E0B',                   // Yellow
+      endodoncia: '#8B5CF6',               // Purple
+      extraccion: '#6B7280',               // Gray
+      implante: '#10B981',                 // Green
+      fractura: '#F97316',                 // Orange
+      ausente: '#374151',                  // Dark Gray
+      puente: '#EC4899',                   // Pink
+      carilla: '#06B6D4',                  // Cyan
+      infeccion_apical: '#DC2626',         // Dark Red
+      reconstruccion_defectuosa: '#7C2D12' // Brown
     };
     return colors[condition as keyof typeof colors] || '#6B7280';
   };
 
+  const getStatusColor = (status: string) => {
+    const colors = {
+      completado: '#10B981',  // Green
+      en_proceso: '#F59E0B',  // Yellow
+      planificado: '#6B7280'  // Gray
+    };
+    return colors[status as keyof typeof colors] || '#6B7280';
+  };
+
   const hasConditions = conditions.length > 0;
+  const primaryCondition = conditions[0];
+  const isAbsent = conditions.some(c => c.condition === 'ausente' || c.condition === 'extraccion');
 
   // Determine if it's a molar, premolar, canine, or incisor for shape
   const toothType = getToothType(toothNumber);
 
   return (
     <div 
-      className="cursor-pointer group"
+      className="cursor-pointer group relative"
       onClick={onClick}
       title={`Pieza ${toothNumber}${hasConditions ? ` - ${conditions.length} condición(es)` : ''}`}
     >
       <svg 
-        width="40" 
-        height="50" 
+        width="48" 
+        height="60" 
         viewBox="0 0 48 60"
-        className="w-8 h-10 sm:w-12 sm:h-15 hover:scale-105 transition-transform duration-200"
+        className="w-10 h-12 sm:w-12 sm:h-15 hover:scale-105 transition-transform duration-200"
       >
         {/* Tooth outline */}
         <path
           d={getToothPath(toothType, isUpper)}
-          fill={hasConditions ? getConditionColor(conditions[0].condition) : '#F8FAFC'}
-          stroke="#E2E8F0"
+          fill={isAbsent ? '#F3F4F6' : (hasConditions ? getConditionColor(primaryCondition.condition) : '#FFFFFF')}
+          stroke={isAbsent ? '#D1D5DB' : '#E5E7EB'}
           strokeWidth="2"
           className="group-hover:stroke-blue-400 transition-colors duration-200"
+          opacity={isAbsent ? 0.5 : 1}
         />
         
-        {/* Root lines for visual detail */}
-        {toothType === 'molar' && (
+        {/* Absent tooth indicator */}
+        {isAbsent && (
           <>
-            <line x1="16" y1="35" x2="16" y2="50" stroke="#E2E8F0" strokeWidth="1" />
-            <line x1="32" y1="35" x2="32" y2="50" stroke="#E2E8F0" strokeWidth="1" />
+            <line x1="12" y1="12" x2="36" y2="36" stroke="#EF4444" strokeWidth="3" />
+            <line x1="36" y1="12" x2="12" y2="36" stroke="#EF4444" strokeWidth="3" />
           </>
         )}
         
-        {/* Multiple conditions indicator */}
-        {conditions.length > 1 && (
-          <circle
-            cx="40"
-            cy="8"
-            r="6"
-            fill="#F59E0B"
-            stroke="white"
-            strokeWidth="2"
-          />
+        {/* Root lines for visual detail */}
+        {toothType === 'molar' && !isAbsent && (
+          <>
+            <line x1="18" y1="35" x2="18" y2="50" stroke="#E5E7EB" strokeWidth="1" />
+            <line x1="30" y1="35" x2="30" y2="50" stroke="#E5E7EB" strokeWidth="1" />
+          </>
         )}
         
-        {/* Condition status indicator */}
-        {hasConditions && (
+        {/* Surface indicators for multiple conditions */}
+        {conditions.length > 1 && !isAbsent && (
+          <g>
+            {conditions.slice(1, 4).map((condition, index) => (
+              <circle
+                key={index}
+                cx={32 + (index * 4)}
+                cy={8 + (index * 4)}
+                r="2"
+                fill={getConditionColor(condition.condition)}
+                stroke="white"
+                strokeWidth="1"
+              />
+            ))}
+          </g>
+        )}
+        
+        {/* Multiple conditions counter */}
+        {conditions.length > 1 && (
+          <g>
+            <circle
+              cx="40"
+              cy="8"
+              r="6"
+              fill="#1F2937"
+              stroke="white"
+              strokeWidth="2"
+            />
+            <text
+              x="40"
+              y="12"
+              textAnchor="middle"
+              className="text-xs fill-white font-bold"
+              fontSize="8"
+            >
+              {conditions.length}
+            </text>
+          </g>
+        )}
+        
+        {/* Status indicator */}
+        {hasConditions && !isAbsent && (
           <circle
             cx="8"
-            cy="8"
+            cy="52"
             r="4"
-            fill={
-              conditions[0].status === 'completado' ? '#10B981' :
-              conditions[0].status === 'en_proceso' ? '#F59E0B' : '#6B7280'
-            }
+            fill={getStatusColor(primaryCondition.status)}
+            stroke="white"
+            strokeWidth="1"
           />
         )}
+
+        {/* Severity indicator for urgent conditions */}
+        {hasConditions && !isAbsent && 
+         ['caries', 'infeccion_apical', 'fractura'].includes(primaryCondition.condition) && 
+         primaryCondition.severity === 'severo' && (
+          <g>
+            <circle cx="40" cy="52" r="5" fill="#DC2626" />
+            <text x="40" y="55" textAnchor="middle" className="text-xs fill-white font-bold" fontSize="10">!</text>
+          </g>
+        )}
       </svg>
+
+      {/* Hover tooltip */}
+      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+        Pieza {toothNumber}
+        {hasConditions && (
+          <div className="text-xs">
+            {conditions.map((c, i) => (
+              <div key={i}>{c.condition} - {c.status}</div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
