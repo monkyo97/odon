@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { ToothSVG } from './ToothSVG';
-import { ConditionModal } from './ConditionModal';
-import { EditConditionModal } from './EditConditionModal';
+import { DiagnosticModal } from './DiagnosticModal';
 import { OdontogramLegend } from './OdontogramLegend';
 import { OdontogramNotes } from './OdontogramNotes';
 import { useToothConditions } from '../hooks/useToothConditions';
-import { Edit, Trash2, Plus, FileText, AlertCircle } from 'lucide-react';
+import { Edit, Trash2, Plus, FileText, AlertCircle, Stethoscope } from 'lucide-react';
 
 export interface ToothCondition {
   id: string;
   toothNumber: number;
   surface: 'oclusal' | 'vestibular' | 'lingual' | 'mesial' | 'distal' | 'incisal' | 'completa';
-  condition: 'caries' | 'restauracion' | 'corona' | 'endodoncia' | 'extraccion' | 'implante' | 'fractura' | 'ausente' | 'puente' | 'carilla' | 'infeccion_apical' | 'reconstruccion_defectuosa';
+  condition: string;
   status: 'planificado' | 'en_proceso' | 'completado';
   notes: string;
   date: string;
@@ -25,9 +24,9 @@ interface OdontogramProps {
 
 export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
   const [selectedTooth, setSelectedTooth] = useState<number | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedCondition, setSelectedCondition] = useState<ToothCondition | null>(null);
+  const [selectedSurfaces, setSelectedSurfaces] = useState<string[]>([]);
+  const [isDiagnosticModalOpen, setIsDiagnosticModalOpen] = useState(false);
+  const [isSelectingMode, setIsSelectingMode] = useState(false);
   const [activeView, setActiveView] = useState<'visual' | 'list' | 'notes'>('visual');
   const { conditions, loading, createCondition, updateCondition, deleteCondition } = useToothConditions(patientId);
 
@@ -36,38 +35,66 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
   const lowerTeeth = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
 
   const handleToothClick = (toothNumber: number) => {
+    if (isSelectingMode) return;
+    
     setSelectedTooth(toothNumber);
-    setIsModalOpen(true);
+    setSelectedSurfaces([]);
+    setIsSelectingMode(true);
+  };
+
+  const handleSurfaceClick = (surface: string) => {
+    if (!isSelectingMode) return;
+    
+    setSelectedSurfaces(prev => {
+      if (prev.includes(surface)) {
+        return prev.filter(s => s !== surface);
+      } else {
+        return [...prev, surface];
+      }
+    });
+  };
+
+  const handleDiagnosticClick = () => {
+    if (selectedSurfaces.length === 0) {
+      alert('Por favor selecciona al menos una superficie del diente');
+      return;
+    }
+    setIsDiagnosticModalOpen(true);
+  };
+
+  const handleSaveDiagnostic = async (diagnostic: any) => {
+    try {
+      // Create a condition for each selected surface
+      for (const surface of diagnostic.surfaces) {
+        await createCondition({
+          id: '',
+          toothNumber: diagnostic.toothNumber,
+          surface: surface as any,
+          condition: diagnostic.condition,
+          status: diagnostic.status,
+          notes: diagnostic.notes,
+          date: diagnostic.date
+        });
+      }
+      
+      setIsDiagnosticModalOpen(false);
+      setIsSelectingMode(false);
+      setSelectedTooth(null);
+      setSelectedSurfaces([]);
+    } catch (error) {
+      console.error('Error saving diagnostic:', error);
+      alert('Error al guardar el diagnóstico');
+    }
+  };
+
+  const handleCancelSelection = () => {
+    setIsSelectingMode(false);
+    setSelectedTooth(null);
+    setSelectedSurfaces([]);
   };
 
   const getToothConditions = (toothNumber: number) => {
     return conditions.filter(condition => condition.toothNumber === toothNumber);
-  };
-
-  const handleAddCondition = async (condition: ToothCondition) => {
-    try {
-      await createCondition(condition);
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error('Error adding condition:', error);
-      alert('Error al agregar la condición');
-    }
-  };
-
-  const handleEditCondition = (condition: ToothCondition) => {
-    setSelectedCondition(condition);
-    setIsEditModalOpen(true);
-  };
-
-  const handleUpdateCondition = async (updatedCondition: ToothCondition) => {
-    try {
-      await updateCondition(updatedCondition.id, updatedCondition);
-      setIsEditModalOpen(false);
-      setSelectedCondition(null);
-    } catch (error) {
-      console.error('Error updating condition:', error);
-      alert('Error al actualizar la condición');
-    }
   };
 
   const handleDeleteCondition = async (conditionId: string) => {
@@ -79,55 +106,6 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
         alert('Error al eliminar la condición');
       }
     }
-  };
-
-  const getConditionLabel = (condition: string) => {
-    const labels = {
-      caries: 'Caries',
-      restauracion: 'Restauración',
-      corona: 'Corona',
-      endodoncia: 'Endodoncia',
-      extraccion: 'Extracción',
-      implante: 'Implante',
-      fractura: 'Fractura',
-      ausente: 'Ausente',
-      puente: 'Puente',
-      carilla: 'Carilla',
-      infeccion_apical: 'Infección Apical',
-      reconstruccion_defectuosa: 'Reconstrucción Defectuosa'
-    };
-    return labels[condition as keyof typeof labels] || condition;
-  };
-
-  const getSurfaceLabel = (surface: string) => {
-    const labels = {
-      oclusal: 'Oclusal',
-      vestibular: 'Vestibular',
-      lingual: 'Lingual',
-      mesial: 'Mesial',
-      distal: 'Distal',
-      incisal: 'Incisal',
-      completa: 'Completa'
-    };
-    return labels[surface as keyof typeof labels] || surface;
-  };
-
-  const getStatusLabel = (status: string) => {
-    const labels = {
-      planificado: 'Planificado',
-      en_proceso: 'En Proceso',
-      completado: 'Completado'
-    };
-    return labels[status as keyof typeof labels] || status;
-  };
-
-  const getSeverityColor = (severity?: string) => {
-    const colors = {
-      leve: 'bg-yellow-100 text-yellow-800',
-      moderado: 'bg-orange-100 text-orange-800',
-      severo: 'bg-red-100 text-red-800'
-    };
-    return severity ? colors[severity as keyof typeof colors] : '';
   };
 
   // Statistics
@@ -143,7 +121,10 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
       {/* Header with statistics */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Odontograma Digital</h3>
+          <div className="flex items-center space-x-3">
+            <Stethoscope className="h-6 w-6 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Odontograma Internacional FDI</h3>
+          </div>
           <div className="flex items-center space-x-4">
             <div className="text-sm">
               <span className="text-gray-600">Total: </span>
@@ -177,7 +158,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Vista Visual
+            Odontograma
           </button>
           <button
             onClick={() => setActiveView('list')}
@@ -204,8 +185,42 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
         {/* Visual Odontogram */}
         {activeView === 'visual' && (
           <div className="space-y-6">
-            <OdontogramLegend />
-            
+            {/* Control Panel */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center space-x-4">
+                {isSelectingMode && selectedTooth && (
+                  <>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-700">
+                        Pieza seleccionada: {selectedTooth}
+                      </span>
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                        {selectedSurfaces.length} superficie(s)
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleDiagnosticClick}
+                      className="flex items-center bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                    >
+                      <Stethoscope className="h-4 w-4 mr-2" />
+                      Diagnóstico
+                    </button>
+                    <button
+                      onClick={handleCancelSelection}
+                      className="text-gray-600 hover:text-gray-800 text-sm"
+                    >
+                      Cancelar
+                    </button>
+                  </>
+                )}
+                {!isSelectingMode && (
+                  <div className="text-sm text-gray-600">
+                    Haz clic en un diente para seleccionar superficies y agregar diagnóstico
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="bg-gray-50 rounded-xl p-8">
               {/* Upper Teeth */}
               <div className="mb-12">
@@ -220,12 +235,15 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
                       conditions={getToothConditions(toothNumber)}
                       onClick={() => handleToothClick(toothNumber)}
                       isUpper={true}
+                      selectedSurfaces={selectedTooth === toothNumber ? selectedSurfaces : []}
+                      onSurfaceClick={handleSurfaceClick}
+                      isSelecting={isSelectingMode && selectedTooth === toothNumber}
                     />
                   ))}
                 </div>
                 <div className="flex justify-center space-x-2 text-xs text-gray-500">
                   {upperTeeth.map((toothNumber) => (
-                    <div key={toothNumber} className="w-12 text-center">
+                    <div key={toothNumber} className="w-15 text-center">
                       {toothNumber}
                     </div>
                   ))}
@@ -243,7 +261,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
               <div>
                 <div className="flex justify-center space-x-2 text-xs text-gray-500 mb-2">
                   {lowerTeeth.map((toothNumber) => (
-                    <div key={toothNumber} className="w-12 text-center">
+                    <div key={toothNumber} className="w-15 text-center">
                       {toothNumber}
                     </div>
                   ))}
@@ -256,6 +274,9 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
                       conditions={getToothConditions(toothNumber)}
                       onClick={() => handleToothClick(toothNumber)}
                       isUpper={false}
+                      selectedSurfaces={selectedTooth === toothNumber ? selectedSurfaces : []}
+                      onSurfaceClick={handleSurfaceClick}
+                      isSelecting={isSelectingMode && selectedTooth === toothNumber}
                     />
                   ))}
                 </div>
@@ -264,6 +285,8 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
                 </div>
               </div>
             </div>
+
+            <OdontogramLegend />
           </div>
         )}
 
@@ -286,17 +309,9 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
                           Pieza {condition.toothNumber}
                         </span>
                         <span className="text-gray-500">•</span>
-                        <span className="text-gray-700 font-medium">{getConditionLabel(condition.condition)}</span>
+                        <span className="text-gray-700 font-medium">{condition.condition}</span>
                         <span className="text-gray-500">•</span>
-                        <span className="text-gray-700">{getSurfaceLabel(condition.surface)}</span>
-                        {condition.severity && (
-                          <>
-                            <span className="text-gray-500">•</span>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(condition.severity)}`}>
-                              {condition.severity.charAt(0).toUpperCase() + condition.severity.slice(1)}
-                            </span>
-                          </>
-                        )}
+                        <span className="text-gray-700">{condition.surface}</span>
                       </div>
                       
                       <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
@@ -305,14 +320,9 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
                           condition.status === 'en_proceso' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {getStatusLabel(condition.status)}
+                          {condition.status}
                         </span>
                         <span>{new Date(condition.date).toLocaleDateString('es-ES')}</span>
-                        {condition.material && (
-                          <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs">
-                            {condition.material}
-                          </span>
-                        )}
                       </div>
                       
                       {condition.notes && (
@@ -321,13 +331,6 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
                     </div>
                     
                     <div className="flex items-center space-x-2 ml-4">
-                      <button
-                        onClick={() => handleEditCondition(condition)}
-                        className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Editar condición"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
                       <button
                         onClick={() => handleDeleteCondition(condition.id)}
                         className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
@@ -357,21 +360,12 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
         )}
       </div>
 
-      <ConditionModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+      <DiagnosticModal
+        isOpen={isDiagnosticModalOpen}
+        onClose={() => setIsDiagnosticModalOpen(false)}
         toothNumber={selectedTooth}
-        onSave={handleAddCondition}
-      />
-
-      <EditConditionModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedCondition(null);
-        }}
-        condition={selectedCondition}
-        onSave={handleUpdateCondition}
+        selectedSurfaces={selectedSurfaces}
+        onSave={handleSaveDiagnostic}
       />
     </div>
   );
