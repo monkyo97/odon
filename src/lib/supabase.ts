@@ -136,6 +136,8 @@ export interface Database {
           id: string;
           patient_id: string;
           branch_id?: string;
+          patient_name?: string;
+          patient_phone?: string;
           dentist_id?: string;
           date: string;
           time: string;

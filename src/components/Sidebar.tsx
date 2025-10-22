@@ -5,8 +5,9 @@ import {
   LayoutDashboard, 
   Users, 
   Calendar, 
-  FileText, 
+  //FileText, 
   Settings,
+  ClipboardPlus,
   Stethoscope 
 } from 'lucide-react';
 
@@ -14,7 +15,8 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Pacientes', href: '/patients', icon: Users },
   { name: 'Agenda', href: '/appointments', icon: Calendar },
-  { name: 'Reportes', href: '/reports', icon: FileText },
+  //{ name: 'Reportes', href: '/reports', icon: FileText },
+  { name: 'Dentistas', href: '/dentists', icon: ClipboardPlus },
   { name: 'Configuración', href: '/settings', icon: Settings },
 ];
 

@@ -4,18 +4,19 @@ import { useAuth } from '../contexts/AuthContext';
 
 export interface Appointment {
   id: string;
-  patientId?: string; //DB: patient_id
-  patientName: string; //DB: patient_name
-  patientPhone: string; //DB: patient_phone
+  patientId?: string; // DB: patient_id
+  patientName?: string; // DB: patient_name (nuevo)
+  patientPhone?: string; // DB: patient_phone
+  dentistId?: string; // DB: dentist_id
   date: string;
   time: string;
-  duration: number;
-  procedure: string;
+  duration?: number;
+  procedure?: string;
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
-  notes: string;
-  dentist: string;
-  created_at: string;
-  updated_at: string;
+  notes?: string;
+  dentist?: string; // referencia o nombre visible
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const useAppointments = () => {
@@ -25,7 +26,7 @@ export const useAppointments = () => {
 
   const fetchAppointments = async () => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -35,25 +36,25 @@ export const useAppointments = () => {
         .order('time', { ascending: true });
 
       if (error) throw error;
-      
-      // Format the data to match our interface
-      const formattedAppointments = (data || []).map(item => ({
+
+      const formatted = (data || []).map((item) => ({
         id: item.id,
         patientId: item.patient_id,
         patientName: item.patient_name,
         patientPhone: item.patient_phone,
+        dentistId: item.dentist_id,
         date: item.date,
         time: item.time,
         duration: item.duration,
         procedure: item.procedure,
-        status: item.status,
+        status: item.status_appointments || item.status,
         notes: item.notes,
-        dentist: item.dentist,
-        created_at: item.created_at,
-        updated_at: item.updated_at
+        dentist: item.dentist_id,
+        created_at: item.created_date,
+        updated_at: item.updated_date,
       }));
-      
-      setAppointments(formattedAppointments);
+
+      setAppointments(formatted);
     } catch (error) {
       console.error('Error fetching appointments:', error);
     } finally {
@@ -61,48 +62,58 @@ export const useAppointments = () => {
     }
   };
 
-  const createAppointment = async (appointmentData: Omit<Appointment, 'id' | 'created_at' | 'updated_at'>) => {
+  const createAppointment = async (
+    appointmentData: Omit<Appointment, 'id' | 'created_at' | 'updated_at'>
+  ) => {
     if (!user) return;
 
     try {
+      // Capturar IP (opcional)
+      const ip = await fetch('https://api.ipify.org?format=json')
+        .then((res) => res.json())
+        .then((data) => data.ip)
+        .catch(() => '0.0.0.0');
+
+      const payload: any = {
+        patient_id: appointmentData.patientId || null,
+        patient_name: appointmentData.patientId ? null : appointmentData.patientName || null,
+        patient_phone: appointmentData.patientPhone || null,
+        dentist_id: appointmentData.dentistId || null,
+        date: appointmentData.date,
+        time: appointmentData.time,
+        duration: appointmentData.duration || null,
+        procedure: appointmentData.procedure || '',
+        status_appointments: appointmentData.status || 'scheduled',
+        notes: appointmentData.notes || '',
+        created_by_user: user.id,
+        created_by_ip: ip,
+      };
+
       const { data, error } = await supabase
         .from('appointments')
-        .insert([{
-          patient_id: appointmentData.patientId || null,
-          time: appointmentData.time,
-          date: appointmentData.date,
-          duration: appointmentData.duration,
-          notes: appointmentData.notes,
-          patient_name: appointmentData.patientName,
-          patient_phone:  appointmentData.patientPhone,
-          procedure: appointmentData.procedure,
-          status: appointmentData.status,
-          dentist: user?.user_metadata?.name
-        }])
+        .insert([payload])
         .select()
         .single();
 
       if (error) throw error;
-      
-      // Format the response to match our interface
-      const formattedAppointment = {
+
+      const newAppointment: Appointment = {
         id: data.id,
         patientId: data.patient_id,
         patientName: data.patient_name,
         patientPhone: data.patient_phone,
+        dentistId: data.dentist_id,
         date: data.date,
         time: data.time,
         duration: data.duration,
         procedure: data.procedure,
-        status: data.status,
+        status: data.status_appointments,
         notes: data.notes,
-        dentist: data.dentist,
-        created_at: data.created_at,
-        updated_at: data.updated_at
+        created_at: data.created_date,
       };
-      
-      setAppointments(prev => [...prev, formattedAppointment]);
-      return data;
+
+      setAppointments((prev) => [...prev, newAppointment]);
+      return newAppointment;
     } catch (error) {
       console.error('Error creating appointment:', error);
       throw error;
@@ -111,20 +122,34 @@ export const useAppointments = () => {
 
   const updateAppointment = async (id: string, updates: Partial<Appointment>) => {
     try {
+      const payload: any = {
+        ...(updates.patientId !== undefined && { patient_id: updates.patientId }),
+        ...(updates.patientName !== undefined && { patient_name: updates.patientName }),
+        ...(updates.patientPhone !== undefined && { patient_phone: updates.patientPhone }),
+        ...(updates.dentistId !== undefined && { dentist_id: updates.dentistId }),
+        ...(updates.date !== undefined && { date: updates.date }),
+        ...(updates.time !== undefined && { time: updates.time }),
+        ...(updates.duration !== undefined && { duration: updates.duration }),
+        ...(updates.procedure !== undefined && { procedure: updates.procedure }),
+        ...(updates.status !== undefined && { status_appointments: updates.status }),
+        ...(updates.notes !== undefined && { notes: updates.notes }),
+        updated_by_user: user?.id,
+        updated_date: new Date().toISOString(),
+      };
+
       const { data, error } = await supabase
         .from('appointments')
-        .update(updates)
+        .update(payload)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      
-      setAppointments(prev => 
-        prev.map(appointment => 
-          appointment.id === id ? { ...appointment, ...data } : appointment
-        )
+
+      setAppointments((prev) =>
+        prev.map((appt) => (appt.id === id ? { ...appt, ...data } : appt))
       );
+
       return data;
     } catch (error) {
       console.error('Error updating appointment:', error);
@@ -134,14 +159,9 @@ export const useAppointments = () => {
 
   const deleteAppointment = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('appointments')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('appointments').delete().eq('id', id);
       if (error) throw error;
-      
-      setAppointments(prev => prev.filter(appointment => appointment.id !== id));
+      setAppointments((prev) => prev.filter((a) => a.id !== id));
     } catch (error) {
       console.error('Error deleting appointment:', error);
       throw error;
@@ -158,6 +178,6 @@ export const useAppointments = () => {
     createAppointment,
     updateAppointment,
     deleteAppointment,
-    refetch: fetchAppointments
+    refetch: fetchAppointments,
   };
 };

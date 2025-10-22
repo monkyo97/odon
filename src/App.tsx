@@ -10,6 +10,7 @@ import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { Dentists } from './pages/Dentists';
 
 function App() {
   return (
@@ -51,6 +52,13 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <PatientDetail />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/dentists" element={
+            <ProtectedRoute>
+              <Layout>
+                <Dentists />
               </Layout>
             </ProtectedRoute>
           } />
