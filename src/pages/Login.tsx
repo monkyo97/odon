@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Stethoscope, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -10,24 +9,23 @@ export const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { user, login } = useAuth();
 
-  if (user) {
-    return <Navigate to="/" replace />;
-  }
+  // Si ya está logueado, redirige al inicio
+  if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
 
-    const success = await login(email, password);
-    
-    if (!success) {
-      setError('Credenciales incorrectas. Intenta con doctor@dental.com / password.');
+    const { error } = await login(email, password);
+
+    if (error) {
+      setError(error.message || 'Credenciales incorrectas. Intenta nuevamente.');
     }
-    
+
     setIsSubmitting(false);
   };
 
@@ -99,7 +97,6 @@ export const Login: React.FC = () => {
               {isSubmitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </button>
           </form>
-
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
               ¿No tienes una cuenta?{' '}
@@ -116,3 +113,17 @@ export const Login: React.FC = () => {
     </div>
   );
 };
+
+{/*
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-500">
+              ¿No tienes una cuenta?{' '}
+              <Link to="/register" className="text-blue-600 hover:text-blue-800 font-medium">
+                Registrarse
+              </Link>
+            </p>
+            <p className="text-xs text-gray-400 mt-2">
+              Example: doctor@dental.com / password
+            </p>
+          </div>
+*/}

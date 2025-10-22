@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Plus, Search, Filter, User, Phone } from 'lucide-react';
+import { Calendar, Clock, Plus, Search, Filter, Phone } from 'lucide-react';
 import { AppointmentModal } from '../components/AppointmentModal';
 import { CalendarView } from '../components/CalendarView';
 import { useAppointments } from '../hooks/useAppointments';

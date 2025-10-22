@@ -68,7 +68,7 @@ export const Dashboard: React.FC = () => {
             {todayAppointments.slice(0, 4).map((appointment, index) => (
               <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-gray-100 last:border-b-0 space-y-2 sm:space-y-0">
                 <div>
-                  <p className="font-medium text-gray-900">{appointment.patient_name}</p>
+                  <p className="font-medium text-gray-900">{appointment.patientName}</p>
                   <p className="text-sm text-gray-600">{appointment.procedure}</p>
                 </div>
                 <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded self-start sm:self-auto">

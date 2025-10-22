@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuth();
-console.log('user?.name')
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 fixed lg:static top-0 left-0 right-0 z-30 lg:z-auto">
       <div className="flex items-center justify-between px-4 sm:px-6 py-4 lg:ml-0">

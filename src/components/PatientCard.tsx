@@ -1,12 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { User, Phone, Mail, Calendar } from 'lucide-react';
+import { Patient } from '../hooks/usePatients';
 
 interface PatientCardProps {
-  patient: any;
+  patient: Patient;
 }
 
 export const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
+
   return (
     <Link 
       to={`/patients/${patient.id}`}
@@ -23,11 +25,11 @@ export const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
           </div>
         </div>
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          patient.status === 'active' 
+          patient.status === '1' 
             ? 'bg-green-100 text-green-800' 
             : 'bg-gray-100 text-gray-800'
         }`}>
-          {patient.status === 'active' ? 'Activo' : 'Inactivo'}
+          {patient.status === '1' ? 'Activo' : 'Inactivo'}
         </span>
       </div>
 
@@ -42,17 +44,18 @@ export const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
         </div>
         <div className="flex items-center text-sm text-gray-600">
           <Calendar className="h-3 w-3 mr-2" />
-          Registrado: {new Date(patient.created_at).toLocaleDateString('es-ES')}
+          Registrado: {new Date(patient.created_date).toLocaleDateString('es-ES')}
         </div>
       </div>
 
-      {patient.next_appointment && (
+      {/* 🗓️ Próxima cita */}
+      {/* {patient.next_appointment && (
         <div className="mt-3 pt-3 border-t border-gray-100">
           <p className="text-sm text-blue-600 font-medium">
             Próxima cita: {new Date(patient.next_appointment).toLocaleDateString('es-ES')}
           </p>
         </div>
-      )}
+      )} */}
     </Link>
   );
 };

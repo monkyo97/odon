@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { X, User, Mail, Phone, Calendar } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface PatientModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (patientData: any) => Promise<void>;
+  onSave: (patientData: unknown) => Promise<void>;
 }
 
 export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onSave }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -24,11 +26,29 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      alert('Usuario no autenticado. Por favor inicia sesión nuevamente.');
+      return;
+    }
+
     setIsSubmitting(true);
-    
+
     try {
-      await onSave(formData);
-      onClose();
+      const patientData = {
+        clinic_id: user.id, // Asociar paciente con la clínica del usuario autenticado
+        name: formData.name.trim(),
+        email: formData.email.trim() || '',
+        phone: formData.phone.trim() || '',
+        birthDate: formData.birthDate || null,
+        address: formData.address.trim() || '',
+        medicalHistory: formData.medicalHistory.trim() || '',
+        emergencyContact: formData.emergencyContact.trim() || '',
+        emergencyPhone: formData.emergencyPhone.trim() || ''
+      };
+
+      await onSave(patientData);
+
+      // Reiniciar y cerrar modal
       setFormData({
         name: '',
         email: '',
@@ -39,9 +59,10 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
         emergencyContact: '',
         emergencyPhone: ''
       });
+      onClose();
     } catch (error) {
-      console.error('Error creating patient:', error);
-      alert('Error al crear el paciente. Inténtalo de nuevo.');
+      console.error('Error creando paciente:', error);
+      alert('Ocurrió un error al crear el paciente. Inténtalo de nuevo.');
     } finally {
       setIsSubmitting(false);
     }
@@ -52,7 +73,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
       <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Nuevo Paciente</h2>
-          <button 
+          <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
@@ -61,7 +82,9 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* DATOS PERSONALES */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Nombre */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Nombre completo *
@@ -79,9 +102,10 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
               </div>
             </div>
 
+            {/* Fecha de nacimiento */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fecha de nacimiento *
+                Fecha de nacimiento
               </label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -90,14 +114,14 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
                   value={formData.birthDate}
                   onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
                 />
               </div>
             </div>
 
+            {/* Correo */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Correo electrónico *
+                Correo electrónico
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -107,14 +131,14 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="maria@email.com"
-                  required
                 />
               </div>
             </div>
 
+            {/* Teléfono */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Teléfono *
+                Teléfono
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -123,13 +147,13 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="+34 666 123 456"
-                  required
+                  placeholder="+593 99 123 4567"
                 />
               </div>
             </div>
           </div>
 
+          {/* Dirección */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Dirección
@@ -143,6 +167,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
             />
           </div>
 
+          {/* Contacto de emergencia */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -166,11 +191,12 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
                 value={formData.emergencyPhone}
                 onChange={(e) => setFormData({ ...formData, emergencyPhone: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="+34 666 123 456"
+                placeholder="+593 98 765 4321"
               />
             </div>
           </div>
 
+          {/* Historia médica */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Historia médica
@@ -184,6 +210,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
             />
           </div>
 
+          {/* Botones */}
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
@@ -197,7 +224,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
               disabled={isSubmitting}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Creando...' : 'Crear Paciente'}
+              {isSubmitting ? 'Guardando...' : 'Crear Paciente'}
             </button>
           </div>
         </form>

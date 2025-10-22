@@ -1,8 +1,9 @@
 import React from 'react';
 import { User, Mail, Phone, MapPin, Heart, Calendar } from 'lucide-react';
+import { Patient } from '../hooks/usePatients';
 
 interface PatientInfoProps {
-  patient: any;
+  patient: Patient;
 }
 
 export const PatientInfo: React.FC<PatientInfoProps> = ({ patient }) => {
@@ -15,11 +16,11 @@ export const PatientInfo: React.FC<PatientInfoProps> = ({ patient }) => {
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Información Personal</h2>
           <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium mt-1 ${
-            patient.status === 'active' 
+            patient.status === '1' 
               ? 'bg-green-100 text-green-800' 
               : 'bg-gray-100 text-gray-800'
           }`}>
-            {patient.status === 'active' ? 'Activo' : 'Inactivo'}
+            {patient.status === '1' ? 'Activo' : 'Inactivo'}
           </span>
         </div>
       </div>

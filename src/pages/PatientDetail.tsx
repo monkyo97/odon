@@ -7,12 +7,16 @@ import { TreatmentHistory } from '../components/TreatmentHistory';
 import { EditPatientModal } from '../components/EditPatientModal';
 import { usePatients } from '../hooks/usePatients';
 import { PatientAppointments } from '../components/PatientAppointments';
+import { ConfirmModal } from '../components/ConfirmModal';
+
 
 export const PatientDetail: React.FC = () => {
   const { id } = useParams();
   const { patients, loading, updatePatient, deletePatient } = usePatients();
   const [activeTab, setActiveTab] = useState<'odontogram' | 'history' | 'appointments'>('odontogram');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const patient = patients.find(p => p.id === id);
 
@@ -47,22 +51,24 @@ export const PatientDetail: React.FC = () => {
 
   const handleDeletePatient = async () => {
     if (!patient) return;
-    
-    const confirmDelete = window.confirm(
-      `¿Estás seguro de que deseas eliminar al paciente ${patient.name}? Esta acción no se puede deshacer y eliminará todos los datos asociados (citas, tratamientos, odontograma).`
-    );
-    
-    if (confirmDelete) {
-      try {
-        await deletePatient(patient.id);
-        // Redirect to patients list after deletion
-        window.location.href = '/patients';
-      } catch (error) {
-        console.error('Error deleting patient:', error);
-        alert('Error al eliminar el paciente. Inténtalo de nuevo.');
-      }
+    setIsConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!patient) return;
+    try {
+      setIsDeleting(true);
+      await deletePatient(patient.id);
+      window.location.href = '/patients';
+    } catch (error) {
+      console.error('Error deleting patient:', error);
+      alert('Error al eliminar el paciente. Inténtalo de nuevo.');
+    } finally {
+      setIsDeleting(false);
+      setIsConfirmOpen(false);
     }
   };
+
 
   const tabs = [
     { id: 'odontogram', label: 'Odontograma', icon: Tooth },
@@ -82,7 +88,7 @@ export const PatientDetail: React.FC = () => {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
-            <p className="text-gray-600">{patient.age} años • Registrado: {new Date(patient.created_at).toLocaleDateString('es-ES')}</p>
+            <p className="text-gray-600">{patient.age} años • Registrado: {new Date(patient.created_date).toLocaleDateString('es-ES')}</p>
           </div>
         </div>
         
@@ -94,13 +100,14 @@ export const PatientDetail: React.FC = () => {
             <Edit className="h-4 w-4 mr-2" />
             Editar
           </button>
-          <button 
+          <button
             onClick={handleDeletePatient}
             className="flex items-center bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
           >
             <Trash2 className="h-4 w-4 mr-2" />
             Eliminar
           </button>
+
         </div>
       </div>
 
@@ -145,6 +152,20 @@ export const PatientDetail: React.FC = () => {
         patient={patient}
         onSave={handleUpdatePatient}
       />
+
+      <ConfirmModal
+        isOpen={isConfirmOpen}
+        title="Eliminar paciente"
+        message={`¿Estás seguro de que deseas eliminar al paciente ${patient.name}? 
+        Esta acción no se puede deshacer y eliminará todos los datos asociados (citas, tratamientos, odontograma).`}
+        confirmText="Eliminar paciente"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
+        onCancel={() => setIsConfirmOpen(false)}
+        loading={isDeleting}
+      />
+
+
     </div>
   );
 };
