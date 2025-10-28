@@ -1,4 +1,3 @@
-// src/pages/Dentists.tsx
 import React, { useMemo, useState } from 'react';
 import { Plus, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDentists } from '../hooks/useDentists';
@@ -125,11 +124,14 @@ export const Dentists: React.FC = () => {
         </div>
       </div>
 
-      <DentistModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={createDentist}
-      />
+      {isModalOpen && (
+        <DentistModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={createDentist}
+        />
+      )}
+
     </div>
   );
 };

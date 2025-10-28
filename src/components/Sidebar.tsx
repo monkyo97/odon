@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -20,7 +20,7 @@ const navigation = [
   { name: 'Configuración', href: '/settings', icon: Settings },
 ];
 
-export const Sidebar: React.FC = () => {
+export const Sidebar: React.FC = memo(() => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -88,4 +88,4 @@ export const Sidebar: React.FC = () => {
     </div>
     </>
   );
-};
+});

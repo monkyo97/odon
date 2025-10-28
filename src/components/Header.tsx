@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Bell, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-export const Header: React.FC = () => {
+export const Header: React.FC = memo(() => {
   const { user, logout } = useAuth();
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 fixed lg:static top-0 left-0 right-0 z-30 lg:z-auto">
@@ -59,4 +59,4 @@ export const Header: React.FC = () => {
       </div>
     </header>
   );
-};
+});

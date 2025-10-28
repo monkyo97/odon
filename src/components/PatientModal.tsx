@@ -3,7 +3,6 @@ import { X, User, Mail, Phone, Calendar } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useAuth } from '../contexts/AuthContext';
 import { FormInput } from '../components/FormInput';
 import { FormTextArea } from '../components/FormTextArea';
 
@@ -39,7 +38,7 @@ interface PatientModalProps {
 }
 
 export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onSave }) => {
-  const { user } = useAuth();
+  //const { user } = useAuth();
 
   const {
     register,
@@ -63,16 +62,13 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
   if (!isOpen) return null;
 
   const onSubmit = async (data: PatientFormData) => {
-    if (!user) {
-      alert('Usuario no autenticado. Por favor inicia sesión nuevamente.');
-      return;
-    }
+    // if (!user) {
+    //   alert('Usuario no autenticado. Por favor inicia sesión nuevamente.');
+    //   return;
+    // }
 
     try {
-      await onSave({
-        ...data,
-        clinic_id: user.id, // Ajusta según la estructura real
-      });
+      await onSave(data);
       reset();
       onClose();
     } catch (error) {

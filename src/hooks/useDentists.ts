@@ -24,6 +24,7 @@ const PAGE_SIZE = 20;
 
 export const useDentists = () => {
   const { user, clinicId } = useAuth();
+
   const [dentists, setDentists] = useState<Dentist[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -62,11 +63,11 @@ export const useDentists = () => {
   useEffect(() => {
     if (!clinicId) return;
     fetchDentists(1);
-  }, [clinicId, fetchDentists]);
+  }, [clinicId]);
 
   // Crear odontólogo
   const createDentist = async (dentistData: Omit<Dentist, 'id'>) => {
-    if (!user || !clinicId) return;
+    if (!clinicId || !user) return;
     try {
       const ip = await fetch('https://api.ipify.org?format=json')
         .then(res => res.json())
@@ -75,24 +76,23 @@ export const useDentists = () => {
 
       const { data, error } = await supabase
         .from('dentists')
-        .insert([{
-          ...dentistData,
-          clinic_id: clinicId,
-          status: '1',
-          created_by_user: user.id,
-          created_by_ip: ip,
-          created_date: new Date().toISOString(),
-        }])
+        .insert([
+          {
+            ...dentistData,
+            clinic_id: clinicId,
+            status: '1',
+            created_by_user: user.id,
+            created_by_ip: ip,
+            created_date: new Date().toISOString(),
+          },
+        ])
         .select()
         .single();
 
       if (error) throw error;
 
-      if (page === 1) {
-        setDentists(prev => [data, ...prev].slice(0, PAGE_SIZE));
-      }
-
-      setTotalDentists(prev => prev + 1);
+      if (page === 1) setDentists((prev) => [data, ...prev].slice(0, PAGE_SIZE));
+      setTotalDentists((prev) => prev + 1);
       return data;
     } catch (error) {
       console.error('Error creating dentist:', error);
@@ -125,10 +125,7 @@ export const useDentists = () => {
         .single();
 
       if (error) throw error;
-
-      setDentists(prev =>
-        prev.map(d => (d.id === id ? { ...d, ...data } : d))
-      );
+      setDentists((prev) => prev.map((d) => (d.id === id ? { ...d, ...data } : d)));
       return data;
     } catch (error) {
       console.error('Error updating dentist:', error);
@@ -158,8 +155,8 @@ export const useDentists = () => {
 
       if (error) throw error;
 
-      setDentists(prev => prev.filter(d => d.id !== id));
-      setTotalDentists(prev => Math.max(0, prev - 1));
+      setDentists((prev) => prev.filter((d) => d.id !== id));
+      setTotalDentists((prev) => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error deleting dentist:', error);
     }

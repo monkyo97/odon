@@ -17,8 +17,9 @@ const dentistSchema = z.object({
       message: 'Número de teléfono inválido',
     }),
   specialty: z.string().optional(),
+  created_by_user: z.string().uuid(),
   license_number: z.string().optional(),
-  status: z.enum(['1', '0']).default('1'),
+  status: z.enum(['1', '0']).default('1').optional(),
 });
 
 type DentistFormData = z.infer<typeof dentistSchema>;

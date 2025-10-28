@@ -143,7 +143,8 @@ export interface Database {
           time: string;
           duration?: number;
           procedure?: string;
-          status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+          status_appointments: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+          status: '1' | '0';
           notes?: string;
           created_by_user?: string;
           created_date?: string;

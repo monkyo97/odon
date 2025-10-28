@@ -123,7 +123,7 @@ export const usePatients = () => {
       if (page === 1) {
         setPatients((prev) => [data, ...prev].slice(0, PAGE_SIZE));
       }
-
+      
       setTotalPatients((prev) => prev + 1);
       setTotalPages((prev) => Math.ceil((prev * PAGE_SIZE + 1) / PAGE_SIZE));
       return data;

@@ -22,7 +22,7 @@ const patientSchema = z.object({
   medical_history: z.string().optional(),
   emergency_contact: z.string().optional(),
   emergency_phone: z.string().optional(),
-  status: z.enum(['active', 'inactive']).default('active'),
+  status: z.enum(['1', '0']).default('1'),
 });
 
 export type PatientFormData = z.infer<typeof patientSchema>;
@@ -56,7 +56,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
       medical_history: '',
       emergency_contact: '',
       emergency_phone: '',
-      status: 'active',
+      status: '1',
     },
   });
 
@@ -134,8 +134,8 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
               registration={register('status')}
               error={errors.status}
               options={[
-                { value: 'active', label: 'Activo' },
-                { value: 'inactive', label: 'Inactivo' },
+                { value: '1', label: 'Activo' },
+                { value: '0', label: 'Inactivo' },
               ]}
             />
           </div>

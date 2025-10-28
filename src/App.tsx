@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { Layout } from './components/Layout';
@@ -19,8 +18,20 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/" element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<Dashboard />} />
+            <Route path="patients" element={<Patients />} />
+            <Route path="appointments" element={<Appointments />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="patients/:id" element={<PatientDetail />} />
+            <Route path="dentists" element={<Dentists />} />
+          </Route>
+
+          {/* <Route path="/" element={
             <ProtectedRoute>
               <Layout>
                 <Dashboard />
@@ -61,7 +72,7 @@ function App() {
                 <Dentists />
               </Layout>
             </ProtectedRoute>
-          } />
+          } /> */}
         </Routes>
       </Router>
     </AuthProvider>

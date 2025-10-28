@@ -30,7 +30,8 @@ const appointmentSchema = z.object({
     .max(240, 'Duración máxima 4 horas'),
   procedure: z.string().nonempty('El procedimiento es obligatorio'),
   notes: z.string().optional(),
-  status: z.enum(['scheduled', 'confirmed', 'completed', 'cancelled']).default('scheduled'),
+  status_appointments: z.enum(['scheduled', 'confirmed', 'completed', 'cancelled']).default('scheduled'),
+  status: z.enum(['1', '0']).default('1'),
 });
 
 type AppointmentFormData = z.infer<typeof appointmentSchema>;
