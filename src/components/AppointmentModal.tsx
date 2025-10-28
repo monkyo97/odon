@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { X, Calendar, Clock, User, FileText, Save, Phone, Briefcase } from 'lucide-react';
+import {
+  X,
+  Calendar,
+  Clock,
+  User,
+  FileText,
+  Save,
+  Phone,
+  Briefcase,
+} from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,11 +20,11 @@ import { FormRadioGroup } from '../components/FormRadioGroup';
 import { FormSearchSelect } from '../components/FormSearchSelect';
 import { Appointment } from '../hooks/useAppointments';
 
-// ✅ Schema de validación
+// ✅ Validación con Zod
 const appointmentSchema = z.object({
   patientId: z.string().optional(),
-  patientName: z.string().min(2, 'El nombre del paciente es obligatorio'),
-  patientPhone: z
+  patient_name: z.string().min(2, 'El nombre del paciente es obligatorio'),
+  patient_phone: z
     .string()
     .optional()
     .refine((v) => !v || /^[0-9+\s-]{6,20}$/.test(v), {
@@ -30,8 +39,10 @@ const appointmentSchema = z.object({
     .max(240, 'Duración máxima 4 horas'),
   procedure: z.string().nonempty('El procedimiento es obligatorio'),
   notes: z.string().optional(),
-  status_appointments: z.enum(['scheduled', 'confirmed', 'completed', 'cancelled']).default('scheduled'),
-  status: z.enum(['1', '0']).default('1'),
+  status_appointments: z
+    .enum(['scheduled', 'confirmed', 'completed', 'cancelled'])
+    .default('scheduled').nonoptional(),
+  status: z.enum(['1', '0']).default('1').nonoptional(),
 });
 
 type AppointmentFormData = z.infer<typeof appointmentSchema>;
@@ -63,10 +74,14 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
       duration: 60,
-      status: 'scheduled',
+      status: '1',
+      status_appointments: 'scheduled',
     },
   });
 
+  if (!isOpen) return null;
+
+  // 🔍 Filtrar pacientes por nombre o teléfono
   const filteredPatients = searchTerm
     ? patients.filter(
         (p) =>
@@ -75,16 +90,16 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
       )
     : patients;
 
-  if (!isOpen) return null;
-
+  // 📋 Selección de paciente existente
   const handlePatientSelect = (patient: any) => {
     setIsNewPatient(false);
     setValue('patientId', patient.id);
-    setValue('patientName', patient.name);
-    setValue('patientPhone', patient.phone || '');
+    setValue('patient_name', patient.name);
+    setValue('patient_phone', patient.phone || '');
     setSearchTerm(patient.name);
   };
 
+  // 💾 Enviar formulario
   const onSubmit = async (data: AppointmentFormData) => {
     try {
       await onSave(data);
@@ -98,6 +113,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     }
   };
 
+  // 📅 Procedimientos y horarios disponibles
   const procedures = [
     'Consulta inicial',
     'Limpieza dental',
@@ -114,10 +130,30 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   ];
 
   const timeSlots = [
-    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
-    '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
-    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
-    '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+    '08:00',
+    '08:30',
+    '09:00',
+    '09:30',
+    '10:00',
+    '10:30',
+    '11:00',
+    '11:30',
+    '12:00',
+    '12:30',
+    '13:00',
+    '13:30',
+    '14:00',
+    '14:30',
+    '15:00',
+    '15:30',
+    '16:00',
+    '16:30',
+    '17:00',
+    '17:30',
+    '18:00',
+    '18:30',
+    '19:00',
+    '19:30',
   ];
 
   return (
@@ -134,6 +170,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
           </button>
         </div>
 
+        {/* Formulario */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
           {/* Radio: paciente nuevo */}
           <FormRadioGroup
@@ -157,8 +194,8 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                 label="Nombre del paciente *"
                 icon={<User className="h-4 w-4" />}
                 placeholder="Ej: María González"
-                registration={register('patientName')}
-                error={errors.patientName}
+                registration={register('patient_name')}
+                error={errors.patient_name}
               />
             ) : (
               <FormSearchSelect
@@ -187,8 +224,8 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               label="Teléfono"
               icon={<Phone className="h-4 w-4" />}
               placeholder="+593 99 123 4567"
-              registration={register('patientPhone')}
-              error={errors.patientPhone}
+              registration={register('patient_phone')}
+              error={errors.patient_phone}
               disabled={!isNewPatient}
             />
 
@@ -242,12 +279,11 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               placeholder="Seleccionar odontólogo"
             />
 
-            {/* Estado */}
+            {/* Estado funcional */}
             <FormSelect
-              label="Estado"
-              registration={register('status')}
-              error={errors.status}
-              showEmptyOption={false}
+              label="Estado de la cita"
+              registration={register('status_appointments')}
+              error={errors.status_appointments}
               options={[
                 { value: 'scheduled', label: 'Programada' },
                 { value: 'confirmed', label: 'Confirmada' },
@@ -268,7 +304,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
 
           {/* Notas */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Notas</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Notas
+            </label>
             <div className="relative">
               <FileText className="absolute left-3 top-3 text-gray-400 h-4 w-4" />
               <textarea

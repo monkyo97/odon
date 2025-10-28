@@ -7,35 +7,42 @@ import { DentistCard } from '../components/DentistCard';
 const PAGE_SIZE = 20;
 
 export const Dentists: React.FC = () => {
-  const {
-    dentists,
-    loading,
-    page,
-    totalPages,
-    totalDentists,
-    fetchDentists,
-    createDentist,
-  } = useDentists();
-
+  const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const {
+    dentists,
+    loading,
+    totalPages,
+    totalDentists,
+    createDentist,
+    refetch,
+  } = useDentists(page);
+
+  // 🔍 Filtrado en memoria
   const filteredDentists = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) return dentists;
-    return dentists.filter(d =>
+    return dentists.filter((d) =>
       d.name.toLowerCase().includes(q) ||
       (d.email || '').toLowerCase().includes(q) ||
       (d.phone || '').includes(q)
     );
   }, [dentists, searchTerm]);
 
-  const handlePrev = () => {
-    if (page > 1) fetchDentists(page - 1);
-  };
+  // ⏪ Paginación
+  const handlePrev = () => setPage((p) => Math.max(1, p - 1));
+  const handleNext = () => setPage((p) => Math.min(totalPages, p + 1));
 
-  const handleNext = () => {
-    if (page < totalPages) fetchDentists(page + 1);
+  // 🦷 Creación exitosa
+  const handleCreate = async (formData: any) => {
+    try {
+      await createDentist.mutateAsync(formData);
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error('Error creando odontólogo:', err);
+    }
   };
 
   return (
@@ -72,9 +79,12 @@ export const Dentists: React.FC = () => {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
               />
             </div>
-            <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+            <button
+              onClick={() => refetch()}
+              className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+            >
               <Filter className="h-4 w-4 mr-2" />
-              Filtros
+              Refrescar
             </button>
           </div>
         </div>
@@ -124,14 +134,14 @@ export const Dentists: React.FC = () => {
         </div>
       </div>
 
+      {/* Modal de creación */}
       {isModalOpen && (
         <DentistModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onSave={createDentist}
+          onSave={handleCreate}
         />
       )}
-
     </div>
   );
 };

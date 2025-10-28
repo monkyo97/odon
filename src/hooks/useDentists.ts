@@ -1,5 +1,5 @@
 // src/hooks/useDentists.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -22,57 +22,67 @@ export interface Dentist {
 
 const PAGE_SIZE = 20;
 
-export const useDentists = () => {
-  const { user, clinicId } = useAuth();
+export const useDentists = (page: number = 1) => {
+  const { clinicId, user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const [dentists, setDentists] = useState<Dentist[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalDentists, setTotalDentists] = useState(0);
+  // -------------------------------
+  // 🔹 Obtener listado de odontólogos
+  // -------------------------------
+  const fetchDentists = async () => {
+    if (!clinicId) return { data: [], count: 0, totalPages: 1 };
 
-  // Obtener odontólogos
-  const fetchDentists = useCallback(async (pageNumber: number = 1) => {
-    if (!clinicId) return;
-    setLoading(true);
+    const from = (page - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    const { data, error, count } = await supabase
+      .from('dentists')
+      .select('*', { count: 'exact' })
+      .eq('clinic_id', clinicId)
+      //.eq('status', '1')
+      .order('created_date', { ascending: false })
+      .range(from, to);
+
+    if (error) throw new Error(error.message);
+
+    return {
+      data: data || [],
+      count: count || 0,
+      totalPages: Math.max(1, Math.ceil((count || 0) / PAGE_SIZE)),
+    };
+  };
+
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: ['dentists', clinicId, page],
+    queryFn: fetchDentists,
+    enabled: !!clinicId, // sólo cuando haya clínica
+    staleTime: 1000 * 60 * 5, // 5 min antes de refrescar
+    //cacheTime: 1000 * 60 * 10, // 10 min en caché
+    retry: 1, // 1 intento si falla
+    refetchOnWindowFocus: false, // no recargar al volver a la pestaña
+  });
+
+  // -------------------------------
+  // 🧠 Helper para obtener IP
+  // -------------------------------
+  const getIpAddress = async (): Promise<string> => {
     try {
-      const from = (pageNumber - 1) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-
-      const { data, error, count } = await supabase
-        .from('dentists')
-        .select('*', { count: 'exact' })
-        .eq('clinic_id', clinicId)
-        .eq('status', '1')
-        .order('created_date', { ascending: false })
-        .range(from, to);
-
-      if (error) throw error;
-
-      setDentists(data || []);
-      setTotalDentists(count || 0);
-      setTotalPages(Math.max(1, Math.ceil((count || 0) / PAGE_SIZE)));
-      setPage(pageNumber);
-    } catch (err) {
-      console.error('Error fetching dentists:', err);
-    } finally {
-      setLoading(false);
+      const res = await fetch('https://api.ipify.org?format=json');
+      const data = await res.json();
+      return data.ip;
+    } catch {
+      return '0.0.0.0';
     }
-  }, [clinicId]);
+  };
 
-  useEffect(() => {
-    if (!clinicId) return;
-    fetchDentists(1);
-  }, [clinicId]);
+  // -------------------------------
+  // 🧩 Crear odontólogo
+  // -------------------------------
+  const createDentist = useMutation({
+    mutationFn: async (dentistData: Omit<Dentist, 'id'>) => {
+      if (!user || !clinicId) throw new Error('Usuario o clínica no disponible');
 
-  // Crear odontólogo
-  const createDentist = async (dentistData: Omit<Dentist, 'id'>) => {
-    if (!clinicId || !user) return;
-    try {
-      const ip = await fetch('https://api.ipify.org?format=json')
-        .then(res => res.json())
-        .then(data => data.ip)
-        .catch(() => '0.0.0.0');
+      const ip = await getIpAddress();
 
       const { data, error } = await supabase
         .from('dentists')
@@ -89,25 +99,23 @@ export const useDentists = () => {
         .select()
         .single();
 
-      if (error) throw error;
-
-      if (page === 1) setDentists((prev) => [data, ...prev].slice(0, PAGE_SIZE));
-      setTotalDentists((prev) => prev + 1);
+      if (error) throw new Error(error.message);
       return data;
-    } catch (error) {
-      console.error('Error creating dentist:', error);
-      throw error;
-    }
-  };
+    },
+    onSuccess: () => {
+      // 🔄 Refresca automáticamente el listado
+      queryClient.invalidateQueries({ queryKey: ['dentists', clinicId] });
+    },
+  });
 
-  // Actualizar odontólogo
-  const updateDentist = async (id: string, updates: Partial<Dentist>) => {
-    if (!user || !clinicId) return;
-    try {
-      const ip = await fetch('https://api.ipify.org?format=json')
-        .then(res => res.json())
-        .then(data => data.ip)
-        .catch(() => '0.0.0.0');
+  // -------------------------------
+  // 🧩 Actualizar odontólogo
+  // -------------------------------
+  const updateDentist = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Dentist> }) => {
+      if (!user || !clinicId) throw new Error('Usuario o clínica no disponible');
+
+      const ip = await getIpAddress();
 
       const payload = {
         ...updates,
@@ -124,23 +132,22 @@ export const useDentists = () => {
         .select()
         .single();
 
-      if (error) throw error;
-      setDentists((prev) => prev.map((d) => (d.id === id ? { ...d, ...data } : d)));
+      if (error) throw new Error(error.message);
       return data;
-    } catch (error) {
-      console.error('Error updating dentist:', error);
-      throw error;
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dentists', clinicId] });
+    },
+  });
 
-  // Inactivar odontólogo (borrado lógico)
-  const deleteDentist = async (id: string) => {
-    if (!user || !clinicId) return;
-    try {
-      const ip = await fetch('https://api.ipify.org?format=json')
-        .then(res => res.json())
-        .then(data => data.ip)
-        .catch(() => '0.0.0.0');
+  // -------------------------------
+  // 🧩 Eliminar (borrado lógico)
+  // -------------------------------
+  const deleteDentist = useMutation({
+    mutationFn: async (id: string) => {
+      if (!user || !clinicId) throw new Error('Usuario o clínica no disponible');
+
+      const ip = await getIpAddress();
 
       const { error } = await supabase
         .from('dentists')
@@ -153,22 +160,23 @@ export const useDentists = () => {
         .eq('id', id)
         .eq('clinic_id', clinicId);
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dentists', clinicId] });
+    },
+  });
 
-      setDentists((prev) => prev.filter((d) => d.id !== id));
-      setTotalDentists((prev) => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Error deleting dentist:', error);
-    }
-  };
-
+  // -------------------------------
+  // 🔁 Retorno del hook
+  // -------------------------------
   return {
-    dentists,
-    loading,
-    page,
-    totalPages,
-    totalDentists,
-    fetchDentists,
+    dentists: data?.data || [],
+    totalDentists: data?.count || 0,
+    totalPages: data?.totalPages || 1,
+    loading: isLoading || isFetching,
+    error,
+    refetch,
     createDentist,
     updateDentist,
     deleteDentist,

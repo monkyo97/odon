@@ -18,7 +18,7 @@ const dentistSchema = z.object({
     }),
   specialty: z.string().optional(),
   license_number: z.string().optional(),
-  status: z.enum(['1', '0']).default('1'),
+  status: z.enum(['1', '0']).default('1').nonoptional(),
 });
 
 export type DentistFormData = z.infer<typeof dentistSchema>;
@@ -26,7 +26,7 @@ export type DentistFormData = z.infer<typeof dentistSchema>;
 interface EditDentistModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: DentistFormData) => Promise<void>;
+  onSave: (data: DentistFormData) => void | Promise<void>;
   dentist: {
     id: string;
     name: string;
@@ -34,8 +34,9 @@ interface EditDentistModalProps {
     phone?: string;
     specialty?: string;
     license_number?: string;
-    status?: '1' | '0';
+    status: '1' | '0';
   };
+  isLoading?: boolean;
 }
 
 export const EditDentistModal: React.FC<EditDentistModalProps> = ({
@@ -43,6 +44,7 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
   onClose,
   onSave,
   dentist,
+  isLoading = false,
 }) => {
   const {
     register,
@@ -54,6 +56,7 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
     defaultValues: dentist,
   });
 
+  // 🔄 Sincroniza valores cuando cambia el odontólogo
   useEffect(() => {
     if (dentist) reset(dentist);
   }, [dentist, reset]);
@@ -63,10 +66,9 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
   const onSubmit = async (data: DentistFormData) => {
     try {
       await onSave(data);
-      onClose();
     } catch (error) {
       console.error('Error actualizando odontólogo:', error);
-      alert('Error al actualizar odontólogo. Inténtalo nuevamente.');
+      alert('❌ Error al actualizar odontólogo. Inténtalo nuevamente.');
     }
   };
 
@@ -78,6 +80,7 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
           <h2 className="text-xl font-semibold text-gray-900">Editar Odontólogo</h2>
           <button
             onClick={onClose}
+            type="button"
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="h-5 w-5" />
@@ -152,11 +155,11 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLoading}
               className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50"
             >
               <Save className="h-4 w-4 mr-2" />
-              {isSubmitting ? 'Guardando...' : 'Guardar cambios'}
+              {isSubmitting || isLoading ? 'Guardando...' : 'Guardar cambios'}
             </button>
           </div>
         </form>

@@ -4,8 +4,8 @@ import { Clock, User, Phone } from 'lucide-react';
 interface Appointment {
   id: string;
   patientId?: string;
-  patientName: string;
-  patientPhone: string;
+  patient_name: string;
+  patient_phone: string;
   date: string;
   time: string;
   duration: number;
@@ -110,7 +110,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
                           <User className="h-4 w-4" />
-                          <span className="font-medium">{appointment.patientName}</span>
+                          <span className="font-medium">{appointment.patient_name}</span>
                         </div>
                         <p className="text-sm font-medium mb-1">{appointment.procedure}</p>
                         <div className="flex items-center space-x-4 text-xs">
@@ -120,7 +120,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           </div>
                           <div className="flex items-center">
                             <Phone className="h-3 w-3 mr-1" />
-                            {appointment.patientPhone}
+                            {appointment.patient_phone}
                           </div>
                         </div>
                         {appointment.notes && (

@@ -9,23 +9,25 @@ import { FormTextArea } from './FormTextArea';
 import { useDentists } from '../hooks/useDentists';
 import type { Appointment } from '../hooks/useAppointments';
 
-// 🧠 Esquema de validación con Zod
+// 🧠 Validación con Zod
 const appointmentSchema = z.object({
-  patientName: z.string().min(2, 'El nombre del paciente es obligatorio'),
-  patientPhone: z
+  patient_name: z.string().min(2, 'El nombre del paciente es obligatorio'),
+  patient_phone: z
     .string()
     .optional()
     .refine((v) => !v || /^[0-9+\s-]{6,20}$/.test(v), {
       message: 'Número de teléfono inválido',
     }),
-  dentistId: z.string().nonempty('Debe seleccionar un odontólogo'),
+  dentist_id: z.string().nonempty('Debe seleccionar un odontólogo'),
   date: z.string().nonempty('La fecha es obligatoria'),
   time: z.string().nonempty('La hora es obligatoria'),
-  duration: z.number().min(15).max(240),
+  duration: z.number().min(15, 'Duración mínima 15 minutos').max(240, 'Duración máxima 4 horas'),
   procedure: z.string().nonempty('El procedimiento es obligatorio'),
   notes: z.string().optional(),
-  status_appointments: z.enum(['scheduled', 'confirmed', 'completed', 'cancelled']).default('scheduled'),
-  status: z.enum(['1', '0']).default('1'),
+  status_appointments: z
+    .enum(['scheduled', 'confirmed', 'completed', 'cancelled'])
+    .default('scheduled').nonoptional(),
+  status: z.enum(['1', '0']).default('1').nonoptional(),
 });
 
 export type AppointmentFormData = z.infer<typeof appointmentSchema>;
@@ -48,13 +50,13 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
     reset,
+    formState: { errors, isSubmitting },
   } = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
-      patientName: '',
-      patientPhone: '',
+      patient_name: '',
+      patient_phone: '',
       dentistId: '',
       date: '',
       time: '',
@@ -66,18 +68,20 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
     },
   });
 
+  // 🔁 Cargar datos al abrir el modal
   useEffect(() => {
     if (appointment) {
       reset({
-        patientName: appointment.patientName || '',
-        patientPhone: appointment.patientPhone || '',
-        dentistId: appointment.dentistId || '',
+        patient_name: appointment.patient_name || '',
+        patient_phone: appointment.patient_phone || '',
+        dentist_id: appointment.dentist_id || '',
         date: appointment.date,
         time: appointment.time,
         duration: appointment.duration || 60,
         procedure: appointment.procedure || '',
         notes: appointment.notes || '',
-        status: appointment.status,
+        status_appointments: appointment.status_appointments || 'scheduled',
+        status: appointment.status || '1',
       });
     }
   }, [appointment, reset]);
@@ -94,6 +98,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
     }
   };
 
+  // ⏰ Horarios disponibles
   const timeSlots = [
     '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
     '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
@@ -101,6 +106,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
     '17:00', '17:30', '18:00', '18:30', '19:00',
   ];
 
+  // 🦷 Procedimientos comunes
   const procedures = [
     'Consulta inicial',
     'Limpieza dental',
@@ -132,14 +138,14 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
 
         {/* Formulario */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-          {/* Paciente */}
+          {/* Campos principales */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Nombre del paciente *"
               icon={<User className="h-4 w-4" />}
               placeholder="Ej: María González"
-              registration={register('patientName')}
-              error={errors.patientName}
+              registration={register('patient_name')}
+              error={errors.patient_name}
             />
 
             <FormInput
@@ -147,8 +153,8 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
               label="Teléfono"
               icon={<Phone className="h-4 w-4" />}
               placeholder="+593 99 123 4567"
-              registration={register('patientPhone')}
-              error={errors.patientPhone}
+              registration={register('patient_phone')}
+              error={errors.patient_phone}
             />
 
             <FormInput
@@ -165,6 +171,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
               registration={register('time')}
               error={errors.time}
               options={timeSlots.map((t) => ({ value: t, label: t }))}
+              placeholder="Seleccionar hora"
             />
 
             <FormSelect
@@ -183,8 +190,8 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
             <FormSelect
               label="Odontólogo *"
               icon={<Briefcase className="h-4 w-4" />}
-              registration={register('dentistId')}
-              error={errors.dentistId}
+              registration={register('dentist_id')}
+              error={errors.dentist_id}
               options={
                 loadingDentists
                   ? [{ value: '', label: 'Cargando...' }]
@@ -193,12 +200,13 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
                       label: `${d.name} — ${d.specialty || 'General'}`,
                     }))
               }
+              placeholder="Seleccionar odontólogo"
             />
 
             <FormSelect
-              label="Estado"
-              registration={register('status')}
-              error={errors.status}
+              label="Estado de la cita"
+              registration={register('status_appointments')}
+              error={errors.status_appointments}
               options={[
                 { value: 'scheduled', label: 'Programada' },
                 { value: 'confirmed', label: 'Confirmada' },
@@ -206,22 +214,25 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
                 { value: 'cancelled', label: 'Cancelada' },
               ]}
             />
-
           </div>
-            <FormSelect
-              label="Procedimiento *"
-              registration={register('procedure')}
-              error={errors.procedure}
-              options={procedures.map((p) => ({ value: p, label: p }))}
-            />
 
-            <FormTextArea
-              label="Notas"
-              placeholder="Observaciones, preparación, etc..."
-              registration={register('notes')}
-              error={errors.notes}
-              rows={3}
-            />
+          {/* Procedimiento */}
+          <FormSelect
+            label="Procedimiento *"
+            registration={register('procedure')}
+            error={errors.procedure}
+            options={procedures.map((p) => ({ value: p, label: p }))}
+            placeholder="Seleccionar procedimiento"
+          />
+
+          {/* Notas */}
+          <FormTextArea
+            label="Notas"
+            placeholder="Observaciones, preparación, etc..."
+            registration={register('notes')}
+            error={errors.notes}
+            rows={3}
+          />
 
           {/* Botones */}
           <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">

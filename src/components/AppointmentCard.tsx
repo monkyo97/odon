@@ -13,43 +13,9 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
   const { updateAppointment, deleteAppointment } = useAppointments();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  
-  const handleDeleteAppointment = async () => {
-    if (!appointment) return;
-    setIsConfirmOpen(true);
-  };
-
-    const confirmDelete = async () => {
-    if (!appointment) return;
-    try {
-      setIsDeleting(true);
-      await deleteAppointment(appointment.id);
-    } catch (error) {
-      console.error('Error deleting appointment:', error);
-      alert('Error al eliminar el paciente. Inténtalo de nuevo.');
-    } finally {
-      setIsDeleting(false);
-      setIsConfirmOpen(false);
-    }
-  };
-
-  // const handleDelete = async () => {
-  //   const confirmDelete = window.confirm(
-  //     `¿Deseas cancelar la cita de ${appointment.patientName}? Esta acción no se puede deshacer.`
-  //   );
-  //   if (!confirmDelete) return;
-
-  //   try {
-  //     await deleteAppointment(appointment.id);
-  //     alert('Cita cancelada correctamente.');
-  //   } catch (error) {
-  //     console.error('Error cancelando la cita:', error);
-  //     alert('Error al cancelar la cita. Intenta nuevamente.');
-  //   }
-  // };
-
+  // 🧾 Colores y etiquetas del estado funcional
   const getStatusColor = (status: string) => {
     const colors = {
       scheduled: 'bg-blue-100 text-blue-800',
@@ -70,6 +36,25 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
     return labels[status as keyof typeof labels] || status;
   };
 
+  // 🗑️ Mostrar modal de confirmación
+  const handleDeleteAppointment = () => {
+    setIsConfirmOpen(true);
+  };
+
+  // 🔄 Confirmar y ejecutar eliminación
+  const confirmDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteAppointment.mutateAsync(appointment.id);
+    } catch (error) {
+      console.error('Error eliminando cita:', error);
+      alert('Error al eliminar la cita. Inténtalo de nuevo.');
+    } finally {
+      setIsDeleting(false);
+      setIsConfirmOpen(false);
+    }
+  };
+
   return (
     <>
       <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition">
@@ -77,17 +62,19 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="text-lg font-semibold text-gray-800">
-              {appointment.patientName}
+              {appointment.patient_name}
             </h3>
-            <p className="text-sm text-gray-500">{appointment.patientPhone || '—'}</p>
+            <p className="text-sm text-gray-500">
+              {appointment.patient_phone || '—'}
+            </p>
           </div>
 
           <span
             className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-              appointment.status
+              appointment.status_appointments
             )}`}
           >
-            {getStatusLabel(appointment.status)}
+            {getStatusLabel(appointment.status_appointments)}
           </span>
         </div>
 
@@ -103,13 +90,15 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
           </div>
           <div className="flex items-center">
             <Phone className="h-4 w-4 mr-2" />
-            {appointment.patientPhone || '—'}
+            {appointment.patient_phone || '—'}
           </div>
         </div>
 
         {/* Procedimiento y notas */}
         <div className="mt-3">
-          <p className="text-sm font-medium text-gray-900">{appointment.procedure}</p>
+          <p className="text-sm font-medium text-gray-900">
+            {appointment.procedure}
+          </p>
           {appointment.notes && (
             <p className="text-sm text-gray-600 mt-1">{appointment.notes}</p>
           )}
@@ -139,16 +128,19 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           appointment={appointment}
-          onSave={(data) => updateAppointment(appointment.id, data)}
+          onSave={(data) =>
+            updateAppointment.mutateAsync({ id: appointment.id, updates: data })
+          }
         />
       )}
-      
+
+      {/* Modal de confirmación */}
       <ConfirmModal
         isOpen={isConfirmOpen}
         title="Cancelar cita"
-        message={`¿Deseas cancelar la cita de ${appointment.patientName}? Esta acción no se puede deshacer.`}
+        message={`¿Deseas cancelar la cita de ${appointment.patient_name}? Esta acción no se puede deshacer.`}
         confirmText="Cancelar cita"
-        cancelText="Cancelar"
+        cancelText="Cerrar"
         onConfirm={confirmDelete}
         onCancel={() => setIsConfirmOpen(false)}
         loading={isDeleting}

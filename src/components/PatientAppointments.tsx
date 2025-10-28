@@ -18,7 +18,7 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
   
   // Filter appointments for this patient
   const patientAppointments = appointments.filter(apt => 
-    apt.patientId === patientId || apt.patientName === patient?.name
+    apt.patientId === patientId || apt.patient_name === patient?.name
   );
 
   const getStatusColor = (status: string) => {

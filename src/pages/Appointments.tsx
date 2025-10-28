@@ -15,15 +15,16 @@ import { useAppointments } from '../hooks/useAppointments';
 const PAGE_SIZE = 20;
 
 export const Appointments: React.FC = () => {
+  const [page, setPage] = useState(1);
+
   const {
     appointments,
-    loading,
-    page,
-    totalPages,
     totalAppointments,
-    fetchAppointments,
+    totalPages,
+    loading,
     createAppointment,
-  } = useAppointments();
+    refetch,
+  } = useAppointments(page);
 
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [selectedDate, setSelectedDate] = useState(
@@ -38,7 +39,7 @@ export const Appointments: React.FC = () => {
     const q = searchTerm.trim().toLowerCase();
     return appointments.filter((appointment) => {
       const matchesSearch =
-        appointment.patientName?.toLowerCase().includes(q) ||
+        appointment.patient_name?.toLowerCase().includes(q) ||
         appointment.procedure?.toLowerCase().includes(q);
       const matchesStatus =
         statusFilter === 'all' ||
@@ -51,11 +52,11 @@ export const Appointments: React.FC = () => {
 
   // ⏮ Paginación (usa backend)
   const handlePrev = () => {
-    if (page > 1) fetchAppointments(page - 1);
+    if (page > 1) setPage((prev) => prev - 1);
   };
 
   const handleNext = () => {
-    if (page < totalPages) fetchAppointments(page + 1);
+    if (page < totalPages) setPage((prev) => prev + 1);
   };
 
   return (
@@ -63,9 +64,7 @@ export const Appointments: React.FC = () => {
       {/* 🔹 Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-            Agenda
-          </h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Agenda</h1>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">
             Gestión de citas y calendario médico
           </p>
@@ -212,8 +211,11 @@ export const Appointments: React.FC = () => {
       {/* 🔹 Modal Nueva Cita */}
       <AppointmentModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={createAppointment}
+        onClose={() => {
+          setIsModalOpen(false);
+          refetch(); // refresca después de crear
+        }}
+        onSave={createAppointment.mutateAsync}
       />
     </div>
   );
