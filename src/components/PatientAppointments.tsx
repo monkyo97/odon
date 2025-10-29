@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Plus, User, Phone, FileText } from 'lucide-react';
+import { Calendar, Clock, Plus, User, FileText } from 'lucide-react';
 import { useAppointments } from '../hooks/useAppointments';
 import { AppointmentModal } from './AppointmentModal';
 import { usePatients } from '../hooks/usePatients';
+import { appointmentColors, appointmentStatuses } from '../constants/constantsAppointments';
 
 interface PatientAppointmentsProps {
   patientId: string;
@@ -22,23 +23,11 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
   );
 
   const getStatusColor = (status: string) => {
-    const colors = {
-      scheduled: 'bg-blue-100 text-blue-800',
-      confirmed: 'bg-green-100 text-green-800',
-      completed: 'bg-gray-100 text-gray-800',
-      cancelled: 'bg-red-100 text-red-800'
-    };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+    return appointmentColors[status as keyof typeof appointmentColors] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusLabel = (status: string) => {
-    const labels = {
-      scheduled: 'Programada',
-      confirmed: 'Confirmada',
-      completed: 'Completada',
-      cancelled: 'Cancelada'
-    };
-    return labels[status as keyof typeof labels] || status;
+    return appointmentStatuses.find(s => s.value === status)?.label || status;
   };
 
   const sortedAppointments = patientAppointments.sort((a, b) => {
@@ -133,10 +122,11 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
         </div>
       )}
 
+      {/*REVISAR AL CERRAR QUE SE ACTUALICE*/}
       <AppointmentModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onSave={createAppointment}
+        onSave={createAppointment.mutateAsync}
       />
     </div>
   );

@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormInput } from '../components/FormInput';
-import { FormSelect } from '../components/FormSelect';
 
 // 🧠 Validación con Zod
 const dentistSchema = z.object({
@@ -17,9 +16,8 @@ const dentistSchema = z.object({
       message: 'Número de teléfono inválido',
     }),
   specialty: z.string().optional(),
-  created_by_user: z.string().uuid(),
   license_number: z.string().optional(),
-  status: z.enum(['1', '0']).default('1').optional(),
+  status: z.enum(['1', '0']).default('1').nonoptional(),
 });
 
 type DentistFormData = z.infer<typeof dentistSchema>;
@@ -42,9 +40,11 @@ export const DentistModal: React.FC<DentistModalProps> = ({ isOpen, onClose, onS
   });
 
   if (!isOpen) return null;
-
+  
   const onSubmit = async (data: DentistFormData) => {
     try {
+      console.log(data);
+      
       await onSave(data);
       reset();
       onClose();
@@ -111,16 +111,12 @@ export const DentistModal: React.FC<DentistModalProps> = ({ isOpen, onClose, onS
               registration={register('license_number')}
               error={errors.license_number}
             />
-
-            <FormSelect
+            {/* <FormSelect
               label="Estado"
               registration={register('status')}
               error={errors.status}
-              options={[
-                { value: '1', label: 'Activo' },
-                { value: '0', label: 'Inactivo' },
-              ]}
-            />
+              options={statusOptions}
+            /> */}
           </div>
 
           {/* Botones */}

@@ -4,6 +4,7 @@ import type { Appointment } from '../hooks/useAppointments';
 import { useAppointments } from '../hooks/useAppointments';
 import { EditAppointmentModal } from './EditAppointmentModal';
 import { ConfirmModal } from './ConfirmModal';
+import { appointmentColors, appointmentStatuses } from '../constants/constantsAppointments';
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -17,23 +18,11 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
 
   // 🧾 Colores y etiquetas del estado funcional
   const getStatusColor = (status: string) => {
-    const colors = {
-      scheduled: 'bg-blue-100 text-blue-800',
-      confirmed: 'bg-green-100 text-green-800',
-      completed: 'bg-gray-100 text-gray-800',
-      cancelled: 'bg-red-100 text-red-800',
-    };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+    return appointmentColors[status as keyof typeof appointmentColors] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusLabel = (status: string) => {
-    const labels = {
-      scheduled: 'Programada',
-      confirmed: 'Confirmada',
-      completed: 'Completada',
-      cancelled: 'Cancelada',
-    };
-    return labels[status as keyof typeof labels] || status;
+    return appointmentStatuses.find(s => s.value === status)?.label || status;
   };
 
   // 🗑️ Mostrar modal de confirmación
@@ -82,7 +71,13 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 text-sm text-gray-600">
           <div className="flex items-center">
             <Calendar className="h-4 w-4 mr-2" />
-            {new Date(appointment.date).toLocaleDateString('es-ES')}
+            {new Date(appointment.date).toLocaleDateString('es-ES', {
+              //weekday: 'long', 
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              timeZone: 'UTC',
+            })}
           </div>
           <div className="flex items-center">
             <Clock className="h-4 w-4 mr-2" />
@@ -113,12 +108,17 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
             <Edit className="h-4 w-4 mr-1" /> Editar
           </button>
 
-          <button
-            onClick={handleDeleteAppointment}
-            className="flex items-center px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
-          >
-            <Trash2 className="h-4 w-4 mr-1" /> Cancelar
-          </button>
+          {
+            appointment.status_appointments === 'cancelled' ? (
+              <></>
+            ) : <button
+              onClick={handleDeleteAppointment}
+              className="flex items-center px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+            >
+              <Trash2 className="h-4 w-4 mr-1" /> Cancelar
+            </button>
+          }
+
         </div>
       </div>
 

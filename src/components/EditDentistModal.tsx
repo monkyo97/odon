@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormInput } from '../components/FormInput';
 import { FormSelect } from '../components/FormSelect';
+import { statusOptions } from '../constants/globalConstants';
 
 // 🧠 Validación con Zod
 const dentistSchema = z.object({
@@ -136,10 +137,7 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
               label="Estado"
               registration={register('status')}
               error={errors.status}
-              options={[
-                { value: '1', label: 'Activo' },
-                { value: '0', label: 'Inactivo' },
-              ]}
+              options={statusOptions}
             />
           </div>
 

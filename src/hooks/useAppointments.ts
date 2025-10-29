@@ -12,7 +12,7 @@ export interface Appointment {
   dentist_id?: string;
   date: string;
   time: string;
-  duration?: number;
+  duration: number;
   procedure?: string;
   /** Estado funcional */
   status_appointments: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
@@ -33,6 +33,30 @@ export const useAppointments = (page: number = 1) => {
   // -------------------------------
   // 🔹 Obtener listado de citas
   // -------------------------------
+  // const fetchAppointments = async () => {
+  //   if (!clinicId) return { data: [], count: 0, totalPages: 1 };
+
+  //   const from = (page - 1) * PAGE_SIZE;
+  //   const to = from + PAGE_SIZE - 1;
+
+  //   const { data, error, count } = await supabase
+  //     .from('appointments')
+  //     .select('*', { count: 'exact' })
+  //     .eq('clinic_id', clinicId)
+  //     //.eq('status', '1') // si deseas solo activas
+  //     .order('date', { ascending: true })
+  //     .order('time', { ascending: true })
+  //     .range(from, to);
+
+  //   if (error) throw new Error(error.message);
+
+  //   return {
+  //     data: data || [],
+  //     count: count || 0,
+  //     totalPages: Math.max(1, Math.ceil((count || 0) / PAGE_SIZE)),
+  //   };
+  // };
+
   const fetchAppointments = async () => {
     if (!clinicId) return { data: [], count: 0, totalPages: 1 };
 
@@ -43,19 +67,45 @@ export const useAppointments = (page: number = 1) => {
       .from('appointments')
       .select('*', { count: 'exact' })
       .eq('clinic_id', clinicId)
-      //.eq('status', '1') // si deseas solo activas
-      .order('date', { ascending: true })
-      .order('time', { ascending: true })
+      // Traemos en orden descendente de fecha y hora
+      .order('date', { ascending: false })
+      .order('time', { ascending: false })
       .range(from, to);
 
     if (error) throw new Error(error.message);
 
+    // 🧠 Ordenar en memoria por prioridad de estado
+    // Prioridades:
+    // 1. confirmed → 0
+    // 2. scheduled → 1
+    // 3. completed → 2
+    // 4. cancelled → 3
+    const priority = {
+      confirmed: 0,
+      scheduled: 0,
+      completed: 1,
+      cancelled: 2,
+    } as const;
+
+    const sortedData = (data || []).sort((a, b) => {
+      const priorityA = priority[a.status_appointments as keyof typeof priority] ?? 99;
+      const priorityB = priority[b.status_appointments as keyof typeof priority] ?? 99;
+
+      if (priorityA !== priorityB) return priorityA - priorityB;
+
+      // Si tienen la misma prioridad, ordena por fecha y hora descendente
+      const dateA = new Date(`${a.date}T${a.time}:00`);
+      const dateB = new Date(`${b.date}T${b.time}:00`);
+      return dateB.getTime() - dateA.getTime();
+    });
+
     return {
-      data: data || [],
+      data: sortedData,
       count: count || 0,
       totalPages: Math.max(1, Math.ceil((count || 0) / PAGE_SIZE)),
     };
   };
+
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['appointments', clinicId, page],
@@ -121,7 +171,7 @@ export const useAppointments = (page: number = 1) => {
 
       const ip = await getIpAddress();
       console.log('Actualizando cita:', updates);
-      
+
       const payload = {
         ...updates,
         updated_by_user: user.id,
@@ -157,7 +207,7 @@ export const useAppointments = (page: number = 1) => {
       const { error } = await supabase
         .from('appointments')
         .update({
-          status: '0',
+          status_appointments: 'cancelled',
           updated_by_user: user.id,
           updated_by_ip: ip,
           updated_date: new Date().toISOString(),

@@ -19,10 +19,11 @@ import { FormSelect } from '../components/FormSelect';
 import { FormRadioGroup } from '../components/FormRadioGroup';
 import { FormSearchSelect } from '../components/FormSearchSelect';
 import { Appointment } from '../hooks/useAppointments';
+import { appointmentDurations, appointmentStatuses, procedures, timeSlots } from '../constants/constantsAppointments';
 
 // ✅ Validación con Zod
 const appointmentSchema = z.object({
-  patientId: z.string().optional(),
+  patient_id: z.string().optional(),
   patient_name: z.string().min(2, 'El nombre del paciente es obligatorio'),
   patient_phone: z
     .string()
@@ -30,7 +31,7 @@ const appointmentSchema = z.object({
     .refine((v) => !v || /^[0-9+\s-]{6,20}$/.test(v), {
       message: 'Número de teléfono inválido',
     }),
-  dentistId: z.string().nonempty('Debe seleccionar un odontólogo'),
+  dentist_id: z.string().nonempty('Debe seleccionar un odontólogo'),
   date: z.string().nonempty('La fecha es obligatoria'),
   time: z.string().nonempty('La hora es obligatoria'),
   duration: z
@@ -40,7 +41,7 @@ const appointmentSchema = z.object({
   procedure: z.string().nonempty('El procedimiento es obligatorio'),
   notes: z.string().optional(),
   status_appointments: z
-    .enum(['scheduled', 'confirmed', 'completed', 'cancelled'])
+    .enum(['scheduled', 'confirmed', 'completed', 'cancelled'], 'El estado es obligatorio')
     .default('scheduled').nonoptional(),
   status: z.enum(['1', '0']).default('1').nonoptional(),
 });
@@ -93,7 +94,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   // 📋 Selección de paciente existente
   const handlePatientSelect = (patient: any) => {
     setIsNewPatient(false);
-    setValue('patientId', patient.id);
+    setValue('patient_id', patient.id);
     setValue('patient_name', patient.name);
     setValue('patient_phone', patient.phone || '');
     setSearchTerm(patient.name);
@@ -112,49 +113,6 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
       alert('Ocurrió un error al crear la cita.');
     }
   };
-
-  // 📅 Procedimientos y horarios disponibles
-  const procedures = [
-    'Consulta inicial',
-    'Limpieza dental',
-    'Empaste',
-    'Endodoncia',
-    'Extracción',
-    'Corona',
-    'Implante',
-    'Ortodoncia - Consulta',
-    'Ortodoncia - Revisión',
-    'Blanqueamiento',
-    'Cirugía oral',
-    'Revisión general',
-  ];
-
-  const timeSlots = [
-    '08:00',
-    '08:30',
-    '09:00',
-    '09:30',
-    '10:00',
-    '10:30',
-    '11:00',
-    '11:30',
-    '12:00',
-    '12:30',
-    '13:00',
-    '13:30',
-    '14:00',
-    '14:30',
-    '15:00',
-    '15:30',
-    '16:00',
-    '16:30',
-    '17:00',
-    '17:30',
-    '18:00',
-    '18:30',
-    '19:00',
-    '19:30',
-  ];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -182,7 +140,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             value={isNewPatient}
             onChange={(val) => {
               setIsNewPatient(Boolean(val));
-              if (val) setValue('patientId', undefined);
+              if (val) setValue('patient_id', undefined);
               else setSearchTerm('');
             }}
           />
@@ -253,21 +211,15 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               label="Duración (minutos) *"
               registration={register('duration', { valueAsNumber: true })}
               error={errors.duration}
-              options={[
-                { value: 30, label: '30' },
-                { value: 45, label: '45' },
-                { value: 60, label: '60' },
-                { value: 90, label: '90' },
-                { value: 120, label: '120' },
-              ]}
+              options={appointmentDurations}
             />
 
             {/* Odontólogo */}
             <FormSelect
               label="Odontólogo *"
               icon={<Briefcase className="h-4 w-4" />}
-              registration={register('dentistId')}
-              error={errors.dentistId}
+              registration={register('dentist_id')}
+              error={errors.dentist_id}
               options={
                 loadingDentists
                   ? [{ value: '', label: 'Cargando...' }]
@@ -281,15 +233,10 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
 
             {/* Estado funcional */}
             <FormSelect
-              label="Estado de la cita"
-              registration={register('status_appointments')}
+              label="Estado de la cita *"
+              registration={register('status_appointments', { required: true})}
               error={errors.status_appointments}
-              options={[
-                { value: 'scheduled', label: 'Programada' },
-                { value: 'confirmed', label: 'Confirmada' },
-                { value: 'completed', label: 'Completada' },
-                { value: 'cancelled', label: 'Cancelada' },
-              ]}
+              options={appointmentStatuses}
             />
           </div>
 
@@ -323,7 +270,6 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             <button
               type="button"
               onClick={() => {
-                reset();
                 onClose();
               }}
               className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"

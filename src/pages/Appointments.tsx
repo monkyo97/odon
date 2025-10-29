@@ -23,7 +23,6 @@ export const Appointments: React.FC = () => {
     totalPages,
     loading,
     createAppointment,
-    refetch,
   } = useAppointments(page);
 
   const [view, setView] = useState<'list' | 'calendar'>('list');
@@ -213,7 +212,6 @@ export const Appointments: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          refetch(); // refresca después de crear
         }}
         onSave={createAppointment.mutateAsync}
       />

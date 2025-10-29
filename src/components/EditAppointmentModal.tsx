@@ -8,6 +8,7 @@ import { FormSelect } from './FormSelect';
 import { FormTextArea } from './FormTextArea';
 import { useDentists } from '../hooks/useDentists';
 import type { Appointment } from '../hooks/useAppointments';
+import { appointmentDurations, appointmentStatuses, procedures, timeSlots } from '../constants/constantsAppointments';
 
 // 🧠 Validación con Zod
 const appointmentSchema = z.object({
@@ -25,7 +26,7 @@ const appointmentSchema = z.object({
   procedure: z.string().nonempty('El procedimiento es obligatorio'),
   notes: z.string().optional(),
   status_appointments: z
-    .enum(['scheduled', 'confirmed', 'completed', 'cancelled'])
+    .enum(['scheduled', 'confirmed', 'completed', 'cancelled'], 'El estado es obligatorio')
     .default('scheduled').nonoptional(),
   status: z.enum(['1', '0']).default('1').nonoptional(),
 });
@@ -46,7 +47,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
   appointment,
 }) => {
   const { dentists, loading: loadingDentists } = useDentists();
-
+  
   const {
     register,
     handleSubmit,
@@ -57,7 +58,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
     defaultValues: {
       patient_name: '',
       patient_phone: '',
-      dentistId: '',
+      dentist_id: '',
       date: '',
       time: '',
       duration: 60,
@@ -97,30 +98,6 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
       alert('Error al actualizar la cita. Inténtalo nuevamente.');
     }
   };
-
-  // ⏰ Horarios disponibles
-  const timeSlots = [
-    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
-    '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
-    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
-    '17:00', '17:30', '18:00', '18:30', '19:00',
-  ];
-
-  // 🦷 Procedimientos comunes
-  const procedures = [
-    'Consulta inicial',
-    'Limpieza dental',
-    'Empaste',
-    'Endodoncia',
-    'Extracción',
-    'Corona',
-    'Implante',
-    'Ortodoncia - Consulta',
-    'Ortodoncia - Revisión',
-    'Blanqueamiento',
-    'Cirugía oral',
-    'Revisión general',
-  ];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -178,13 +155,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
               label="Duración (minutos) *"
               registration={register('duration', { valueAsNumber: true })}
               error={errors.duration}
-              options={[
-                { value: 30, label: '30' },
-                { value: 45, label: '45' },
-                { value: 60, label: '60' },
-                { value: 90, label: '90' },
-                { value: 120, label: '120' },
-              ]}
+              options={appointmentDurations}
             />
 
             <FormSelect
@@ -207,12 +178,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
               label="Estado de la cita"
               registration={register('status_appointments')}
               error={errors.status_appointments}
-              options={[
-                { value: 'scheduled', label: 'Programada' },
-                { value: 'confirmed', label: 'Confirmada' },
-                { value: 'completed', label: 'Completada' },
-                { value: 'cancelled', label: 'Cancelada' },
-              ]}
+              options={appointmentStatuses}
             />
           </div>
 
