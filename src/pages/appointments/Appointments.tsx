@@ -7,10 +7,10 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { AppointmentModal } from '../components/AppointmentModal';
-import { CalendarView } from '../components/CalendarView';
-import { AppointmentCard } from '../components/AppointmentCard';
-import { useAppointments } from '../hooks/useAppointments';
+import { AppointmentModal } from './components/AppointmentModal';
+import { CalendarView } from './components/CalendarView';
+import { AppointmentCard } from './components/AppointmentCard';
+import { useAppointments } from '../../hooks/useAppointments';
 
 const PAGE_SIZE = 20;
 

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, Phone, Edit, Trash2 } from 'lucide-react';
-import type { Appointment } from '../hooks/useAppointments';
-import { useAppointments } from '../hooks/useAppointments';
+import type { Appointment } from '../../../hooks/useAppointments';
+import { useAppointments } from '../../../hooks/useAppointments';
 import { EditAppointmentModal } from './EditAppointmentModal';
-import { ConfirmModal } from './ConfirmModal';
-import { appointmentColors, appointmentStatuses } from '../constants/constantsAppointments';
+import { ConfirmModal } from '../../../components/ConfirmModal';
+import { appointmentColors, appointmentStatuses } from '../../../constants/constantsAppointments';
 
 interface AppointmentCardProps {
   appointment: Appointment;

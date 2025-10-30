@@ -3,12 +3,12 @@ import { X, User, Phone, Calendar, Clock, Briefcase, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FormInput } from './FormInput';
-import { FormSelect } from './FormSelect';
-import { FormTextArea } from './FormTextArea';
-import { useDentists } from '../hooks/useDentists';
-import type { Appointment } from '../hooks/useAppointments';
-import { appointmentDurations, appointmentStatuses, procedures, timeSlots } from '../constants/constantsAppointments';
+import { FormInput } from '../../../components/FormInput';
+import { FormSelect } from '../../../components/FormSelect';
+import { FormTextArea } from '../../../components/FormTextArea';
+import { useDentists } from '../../../hooks/useDentists';
+import type { Appointment } from '../../../hooks/useAppointments';
+import { appointmentDurations, appointmentStatuses, procedures, timeSlots } from '../../../constants/constantsAppointments';
 
 // 🧠 Validación con Zod
 const appointmentSchema = z.object({

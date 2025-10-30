@@ -1,0 +1,122 @@
+import React, { useState } from 'react';
+import { Appointment, useAppointments } from '../../../hooks/useAppointments';
+import {
+  timeSlots,
+} from '../../../constants/constantsAppointments';
+import { Legend } from '../../../components/LegendCalendarView';
+import { AppointmentModal } from './AppointmentModal';
+import { CalendarViewDetail } from './CalendarViewDetail';
+
+interface CalendarViewProps {
+  appointments: Appointment[];
+  selectedDate: string;
+  onDateChange: (date: string) => void;
+}
+
+export const CalendarView: React.FC<CalendarViewProps> = ({
+  appointments,
+  selectedDate,
+}) => {
+  const { createAppointment } = useAppointments();
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  // 📅 Obtener citas para un slot
+  const getAppointmentsForSlot = (time: string) =>
+    appointments.filter((apt) => apt.time === time && apt.date === selectedDate);
+
+  // 🔄 Calcular cuántos slots ocupa una cita
+  const getSlotCount = (duration: number) => Math.ceil(duration / 30);
+
+  // ⚡ Manejar clic en hora disponible
+  const handleAvailableSlotClick = (time: string) => {
+    setSelectedSlot(time);
+    setIsCreateModalOpen(true);
+  };
+
+  // 🚫 Evitar render duplicado de slots ocupados
+  const isSlotWithinAppointment = (time: string) => {
+    return appointments.some((apt) => {
+      const startIndex = timeSlots.indexOf(apt.time);
+      const slots = getSlotCount(apt.duration);
+      const occupiedTimes = timeSlots.slice(startIndex + 1, startIndex + slots);
+      return apt.date === selectedDate && occupiedTimes.includes(time);
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* 🔹 Header */}
+      {/* 🔹 Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between sm:space-y-0 space-y-3 text-center sm:text-left">
+        {/* Fecha */}
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 order-1 sm:order-none">
+          {new Date(selectedDate).toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            timeZone: 'UTC',
+          })}
+        </h3>
+
+        {/* Leyendas de estados */}
+        <div className="flex flex-col sm:flex-row sm:space-x-3 space-y-2 sm:space-y-0 justify-center sm:justify-end text-sm order-2 sm:order-none">
+          <Legend color="bg-green-300" label="Confirmada" />
+          <Legend color="bg-blue-300" label="Programada" />
+          <Legend color="bg-gray-300" label="Completada" />
+          <Legend color="bg-red-300" label="Cancelada" />
+        </div>
+      </div>
+
+
+      {/* 🔹 Horario */}
+      <div className="grid grid-cols-1 gap-2">
+        {timeSlots.map((time) => {
+          // Evita renderizar un slot intermedio de una cita más larga
+          if (isSlotWithinAppointment(time)) return null;
+
+          const slotAppointments = getAppointmentsForSlot(time);
+          const isEmpty = slotAppointments.length === 0;
+
+          return (
+            <div key={time} className="flex items-start">
+              {/* Hora lateral */}
+              <div className="w-16 text-sm text-gray-500 font-medium mt-1">{time}</div>
+
+              {/* Contenedor de citas */}
+              <div className="flex-1 ml-4">
+                {isEmpty ? (
+                  <div
+                    onClick={() => handleAvailableSlotClick(time)}
+                    className="h-14 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:border-blue-300 hover:text-blue-500 transition-colors cursor-pointer"
+                  >
+                    <span className="text-sm">Disponible</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {slotAppointments.map((appointment) => {
+                      return (
+                        <CalendarViewDetail key={appointment.id} appointmentInfo={appointment} />
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Modal creación */}
+      {isCreateModalOpen && (
+        <AppointmentModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSave={() => createAppointment.mutateAsync({} as Appointment)} // corregir
+        //defaultDate={selectedDate}
+        //defaultTime={selectedSlot ?? ''}
+        />
+      )}
+    </div>
+  );
+};

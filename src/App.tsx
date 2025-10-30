@@ -4,12 +4,12 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Patients } from './pages/Patients';
 import { PatientDetail } from './pages/PatientDetail';
-import { Appointments } from './pages/Appointments';
+import { Appointments } from './pages/appointments/Appointments';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { Dentists } from './pages/Dentists';
+import { Dentists } from './pages/dentists/Dentists';
 
 function App() {
   return (

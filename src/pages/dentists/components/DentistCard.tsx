@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ClipboardPlus, Edit, Mail, Phone } from 'lucide-react';
-import { Dentist, useDentists } from '../hooks/useDentists';
+import { Dentist, useDentists } from '../../../hooks/useDentists';
 import { EditDentistModal } from './EditDentistModal';
 
 interface DentistCardProps {

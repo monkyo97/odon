@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, Plus, User, FileText } from 'lucide-react';
 import { useAppointments } from '../hooks/useAppointments';
-import { AppointmentModal } from './AppointmentModal';
+import { AppointmentModal } from '../pages/appointments/components/AppointmentModal';
 import { usePatients } from '../hooks/usePatients';
 import { appointmentColors, appointmentStatuses } from '../constants/constantsAppointments';
 

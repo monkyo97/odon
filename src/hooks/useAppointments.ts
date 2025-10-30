@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { Dentist } from './useDentists';
 
 export interface Appointment {
   id: string;
@@ -19,7 +20,7 @@ export interface Appointment {
   /** Estado lógico */
   status: '1' | '0';
   notes?: string;
-  dentist?: string;
+  dentist?: Dentist;
   created_at?: string;
   updated_at?: string;
 }
@@ -65,7 +66,13 @@ export const useAppointments = (page: number = 1) => {
 
     const { data, error, count } = await supabase
       .from('appointments')
-      .select('*', { count: 'exact' })
+      .select(
+        `*, 
+        dentist:dentists (
+            id,
+            name,
+            specialty
+        )`, { count: 'exact' })
       .eq('clinic_id', clinicId)
       // Traemos en orden descendente de fecha y hora
       .order('date', { ascending: false })

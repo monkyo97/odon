@@ -12,14 +12,14 @@ import {
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { usePatients } from '../hooks/usePatients';
-import { useDentists } from '../hooks/useDentists';
-import { FormInput } from '../components/FormInput';
-import { FormSelect } from '../components/FormSelect';
-import { FormRadioGroup } from '../components/FormRadioGroup';
-import { FormSearchSelect } from '../components/FormSearchSelect';
-import { Appointment } from '../hooks/useAppointments';
-import { appointmentDurations, appointmentStatuses, procedures, timeSlots } from '../constants/constantsAppointments';
+import { usePatients } from '../../../hooks/usePatients';
+import { useDentists } from '../../../hooks/useDentists';
+import { FormInput } from '../../../components/FormInput';
+import { FormSelect } from '../../../components/FormSelect';
+import { FormRadioGroup } from '../../../components/FormRadioGroup';
+import { FormSearchSelect } from '../../../components/FormSearchSelect';
+import { Appointment } from '../../../hooks/useAppointments';
+import { appointmentDurations, appointmentStatuses, procedures, timeSlots } from '../../../constants/constantsAppointments';
 
 // ✅ Validación con Zod
 const appointmentSchema = z.object({
