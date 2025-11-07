@@ -10,7 +10,7 @@ import {
 import { AppointmentModal } from './components/AppointmentModal';
 import { CalendarView } from './components/CalendarView';
 import { AppointmentCard } from './components/AppointmentCard';
-import { useAppointments } from '../../hooks/useAppointments';
+import { useAppointments } from '@hooks/useAppointments';
 
 const PAGE_SIZE = 20;
 
@@ -213,7 +213,7 @@ export const Appointments: React.FC = () => {
         onClose={() => {
           setIsModalOpen(false);
         }}
-        onSave={createAppointment.mutateAsync}
+        onSave={(formData) => createAppointment.mutateAsync({ ...formData })}
       />
     </div>
   );

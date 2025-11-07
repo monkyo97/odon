@@ -23,7 +23,7 @@ export const Login: React.FC = () => {
     const { error } = await login(email, password);
 
     if (error) {
-      setError(error.message || 'Credenciales incorrectas. Intenta nuevamente.');
+      setError('Credenciales incorrectas. Intenta nuevamente.');
     }
 
     setIsSubmitting(false);

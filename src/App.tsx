@@ -5,7 +5,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Patients } from './pages/Patients';
 import { PatientDetail } from './pages/PatientDetail';
 import { Appointments } from './pages/appointments/Appointments';
-import { Settings } from './pages/Settings';
+import { Settings } from './pages/settings/Settings';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ProtectedRoute } from './components/ProtectedRoute';

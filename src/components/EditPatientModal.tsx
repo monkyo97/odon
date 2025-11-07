@@ -7,6 +7,7 @@ import type { Patient } from '../hooks/usePatients';
 import { FormInput } from '../components/FormInput';
 import { FormTextArea } from '../components/FormTextArea';
 import { FormSelect } from '../components/FormSelect';
+import { Notifications } from './Notifications';
 
 // 🧠 Validación con Zod
 const patientSchema = z.object({
@@ -22,7 +23,7 @@ const patientSchema = z.object({
   medical_history: z.string().optional(),
   emergency_contact: z.string().optional(),
   emergency_phone: z.string().optional(),
-  status: z.enum(['1', '0']).default('1'),
+  status: z.enum(['1', '0']).default('1').nonoptional(),
 });
 
 export type PatientFormData = z.infer<typeof patientSchema>;
@@ -71,9 +72,10 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
     try {
       await onSave(data);
       onClose();
+      Notifications.success('Paciente actualizado correctamente.');
     } catch (error) {
       console.error('Error updating patient:', error);
-      alert('Error al actualizar el paciente. Inténtalo de nuevo.');
+      Notifications.error('Error al actualizar el paciente. Inténtalo de nuevo.');
     }
   };
 
@@ -97,7 +99,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Nombre completo *"
-              icon={<User className="h-4 w-4" />}
+              iconLeft={<User className="h-4 w-4" />}
               registration={register('name')}
               error={errors.name}
               placeholder="Ej: María González López"
@@ -106,7 +108,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
             <FormInput
               type="date"
               label="Fecha de nacimiento *"
-              icon={<Calendar className="h-4 w-4" />}
+              iconLeft={<Calendar className="h-4 w-4" />}
               registration={register('birth_date')}
               error={errors.birth_date}
             />
@@ -114,7 +116,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
             <FormInput
               type="email"
               label="Correo electrónico *"
-              icon={<Mail className="h-4 w-4" />}
+              iconLeft={<Mail className="h-4 w-4" />}
               registration={register('email')}
               error={errors.email}
               placeholder="maria@email.com"
@@ -123,7 +125,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
             <FormInput
               type="tel"
               label="Teléfono *"
-              icon={<Phone className="h-4 w-4" />}
+              iconLeft={<Phone className="h-4 w-4" />}
               registration={register('phone')}
               error={errors.phone}
               placeholder="+593 99 123 4567"

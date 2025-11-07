@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Clock, User, Phone, Edit, Trash2, ClipboardPlus } from 'lucide-react';
-import { Appointment, useAppointments } from '../../../hooks/useAppointments';
+import { Appointment, useAppointments } from '@hooks/useAppointments';
 import {
   colorsBorderCardCalendar,
   colorsTextCalendar,
 } from '../../../constants/constantsAppointments';
 import { EditAppointmentModal } from './EditAppointmentModal';
-import { ConfirmModal } from '../../../components/ConfirmModal';
-import { InfoLabel } from '../../../components/InfoLabel';
+import { ConfirmModal } from '@components/ConfirmModal';
+import { InfoLabel } from '@components/InfoLabel';
+import { Notifications } from '@/components/Notifications';
 
 interface CalendarViewProps {
   appointmentInfo: Appointment;
@@ -50,9 +51,10 @@ export const CalendarViewDetail: React.FC<CalendarViewProps> = ({
       if (!appointment) return;
       setIsDeleting(true);
       await deleteAppointment.mutateAsync(appointment.id);
+      Notifications.success('Cita cancelada correctamente.');
     } catch (error) {
       console.error('Error eliminando cita:', error);
-      alert('Error al eliminar la cita. Inténtalo de nuevo.');
+      Notifications.error('Error al eliminar la cita. Inténtalo de nuevo.');
     } finally {
       setIsDeleting(false);
       setIsConfirmOpen(false);
@@ -129,7 +131,7 @@ export const CalendarViewDetail: React.FC<CalendarViewProps> = ({
             labelClassName="text-gray-800"
           />
           <InfoLabel
-            icon={ClipboardPlus}
+            iconLeft={ClipboardPlus}
             label={
               <>
                 <p>{appointmentInfo?.dentist?.name || '—'} - {appointmentInfo?.dentist?.specialty || '—'}</p>
@@ -147,7 +149,7 @@ export const CalendarViewDetail: React.FC<CalendarViewProps> = ({
             labelClassName="text-gray-800"
           />
           <InfoLabel
-            icon={Clock}
+            iconLeft={Clock}
             label={`${appointmentInfo.time} - ${calculateEndTime(
               appointmentInfo.time,
               appointmentInfo.duration
@@ -166,13 +168,13 @@ export const CalendarViewDetail: React.FC<CalendarViewProps> = ({
             labelClassName="text-gray-800"
           />
           <InfoLabel
-            icon={User}
+            iconLeft={User}
             label={appointmentInfo.patient_name}
             labelClassName="text-gray-800"
           />
           {appointmentInfo.patient_phone && (
             <InfoLabel
-              icon={Phone}
+              iconLeft={Phone}
               label={appointmentInfo.patient_phone}
               labelClassName="text-gray-800"
             />

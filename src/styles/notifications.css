@@ -1,0 +1,64 @@
+/* 🎨 Estilos personalizados solo para notificaciones */
+.custom-notification {
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  border-color: #dd3939;
+  font-family: 'Inter', sans-serif !important;
+  box-shadow: 0 4px 18px rgba(12, 12, 12, 0.12) !important;
+  color: #000000 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  transition: all 0.3s ease-in-out !important;
+}
+
+/* 🌈 Colores por tipo */
+.custom-notification.success {
+  background: white; /* linear-gradient(135deg, #ffffff, #22c55e) !important; /* verde */
+}
+
+.custom-notification.error {
+  background: white /* linear-gradient(135deg, #dc2626, #ef4444) !important; /* rojo */
+}
+
+.custom-notification.warning {
+  background: white /* linear-gradient(135deg, #eab308, #facc15) !important; /* amarillo */
+  /* color: #111 !important; */
+}
+
+.custom-notification.info {
+  background: white /* linear-gradient(135deg, #2563eb, #3b82f6) !important; /* azul */
+}
+
+/* ✨ Texto */
+.custom-notification-body {
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  margin: 0 !important;
+}
+
+/* 🧱 Wrapper */
+.custom-toast-wrapper {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 🚀 Animaciones */
+.Toastify__toast--enter {
+  transform: translateX(100%);
+  opacity: 0;
+}
+.Toastify__toast--enter-active {
+  transform: translateX(0);
+  opacity: 1;
+  transition: all 0.4s ease;
+}
+.Toastify__toast--exit {
+  transform: translateX(0);
+  opacity: 1;
+}
+.Toastify__toast--exit-active {
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.4s ease;
+}

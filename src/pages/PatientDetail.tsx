@@ -8,6 +8,7 @@ import { EditPatientModal } from '../components/EditPatientModal';
 import { usePatients } from '../hooks/usePatients';
 import { PatientAppointments } from '../components/PatientAppointments';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { Notifications } from '@/components/Notifications';
 
 
 export const PatientDetail: React.FC = () => {
@@ -59,10 +60,11 @@ export const PatientDetail: React.FC = () => {
     try {
       setIsDeleting(true);
       await deletePatient(patient.id);
+      Notifications.success('Paciente eliminado correctamente.');
       window.location.href = '/patients';
     } catch (error) {
       console.error('Error deleting patient:', error);
-      alert('Error al eliminar el paciente. Inténtalo de nuevo.');
+      Notifications.error('Error al eliminar el paciente. Inténtalo de nuevo.');
     } finally {
       setIsDeleting(false);
       setIsConfirmOpen(false);

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormInput } from '../components/FormInput';
 import { FormTextArea } from '../components/FormTextArea';
+import { Notifications } from './Notifications';
 
 // 🧠 Esquema de validación con Zod
 const patientSchema = z.object({
@@ -62,18 +63,14 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
   if (!isOpen) return null;
 
   const onSubmit = async (data: PatientFormData) => {
-    // if (!user) {
-    //   alert('Usuario no autenticado. Por favor inicia sesión nuevamente.');
-    //   return;
-    // }
-
     try {
       await onSave(data);
       reset();
       onClose();
+      Notifications.success('Paciente creado correctamente.');
     } catch (error) {
       console.error('Error creando paciente:', error);
-      alert('Ocurrió un error al crear el paciente. Inténtalo de nuevo.');
+      Notifications.error('Error al crear el paciente. Inténtalo de nuevo.');
     }
   };
 
@@ -97,7 +94,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Nombre completo *"
-              icon={<User className="h-4 w-4" />}
+              iconLeft={<User className="h-4 w-4" />}
               placeholder="Ej: María González López"
               registration={register('name')}
               error={errors.name}
@@ -106,7 +103,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
             <FormInput
               type="date"
               label="Fecha de nacimiento"
-              icon={<Calendar className="h-4 w-4" />}
+              iconLeft={<Calendar className="h-4 w-4" />}
               registration={register('birthDate')}
               error={errors.birthDate}
             />
@@ -114,7 +111,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
             <FormInput
               type="email"
               label="Correo electrónico"
-              icon={<Mail className="h-4 w-4" />}
+              iconLeft={<Mail className="h-4 w-4" />}
               placeholder="maria@email.com"
               registration={register('email')}
               error={errors.email}
@@ -123,7 +120,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
             <FormInput
               type="tel"
               label="Teléfono"
-              icon={<Phone className="h-4 w-4" />}
+              iconLeft={<Phone className="h-4 w-4" />}
               placeholder="+593 99 123 4567"
               registration={register('phone')}
               error={errors.phone}

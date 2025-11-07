@@ -3,9 +3,10 @@ import { X, User, Mail, Phone, Briefcase, BookMarked, Save } from 'lucide-react'
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FormInput } from '../../../components/FormInput';
-import { FormSelect } from '../../../components/FormSelect';
+import { FormInput } from '@components/FormInput';
+import { FormSelect } from '@components/FormSelect';
 import { statusOptions } from '../../../constants/globalConstants';
+import { Notifications } from '@/components/Notifications';
 
 // 🧠 Validación con Zod
 const dentistSchema = z.object({
@@ -19,7 +20,7 @@ const dentistSchema = z.object({
     }),
   specialty: z.string().optional(),
   license_number: z.string().optional(),
-  status: z.enum(['1', '0']).default('1').nonoptional(),
+  status: z.enum(['1', '0'], 'Debe seleccionar un estado').default('1').nonoptional(),
 });
 
 export type DentistFormData = z.infer<typeof dentistSchema>;
@@ -67,9 +68,10 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
   const onSubmit = async (data: DentistFormData) => {
     try {
       await onSave(data);
+      Notifications.success('Odontólogo actualizado correctamente.');
     } catch (error) {
       console.error('Error actualizando odontólogo:', error);
-      alert('❌ Error al actualizar odontólogo. Inténtalo nuevamente.');
+      Notifications.error('Error al actualizar odontólogo. Inténtalo nuevamente.');
     }
   };
 
@@ -93,7 +95,7 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
           <div className="grid grid-cols-1 gap-4">
             <FormInput
               label="Nombre completo *"
-              icon={<User className="h-4 w-4" />}
+              iconLeft={<User className="h-4 w-4" />}
               placeholder="Ej: Dra. María Pérez"
               registration={register('name')}
               error={errors.name}
@@ -102,7 +104,7 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
             <FormInput
               type="email"
               label="Correo electrónico *"
-              icon={<Mail className="h-4 w-4" />}
+              iconLeft={<Mail className="h-4 w-4" />}
               placeholder="odontologo@ejemplo.com"
               registration={register('email')}
               error={errors.email}
@@ -111,7 +113,7 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
             <FormInput
               type="tel"
               label="Teléfono"
-              icon={<Phone className="h-4 w-4" />}
+              iconLeft={<Phone className="h-4 w-4" />}
               placeholder="+593 99 123 4567"
               registration={register('phone')}
               error={errors.phone}
@@ -119,7 +121,7 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
 
             <FormInput
               label="Especialidad"
-              icon={<Briefcase className="h-4 w-4" />}
+              iconLeft={<Briefcase className="h-4 w-4" />}
               placeholder="Ortodoncia, Endodoncia, etc."
               registration={register('specialty')}
               error={errors.specialty}
@@ -127,7 +129,7 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
 
             <FormInput
               label="N° de Licencia"
-              icon={<BookMarked className="h-4 w-4" />}
+              iconLeft={<BookMarked className="h-4 w-4" />}
               placeholder="Ej: 09-OD-2023"
               registration={register('license_number')}
               error={errors.license_number}

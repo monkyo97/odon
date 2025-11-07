@@ -12,14 +12,15 @@ import {
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { usePatients } from '../../../hooks/usePatients';
-import { useDentists } from '../../../hooks/useDentists';
-import { FormInput } from '../../../components/FormInput';
-import { FormSelect } from '../../../components/FormSelect';
-import { FormRadioGroup } from '../../../components/FormRadioGroup';
-import { FormSearchSelect } from '../../../components/FormSearchSelect';
-import { Appointment } from '../../../hooks/useAppointments';
+import { usePatients } from '@hooks/usePatients';
+import { useDentists } from '@hooks/useDentists';
+import { FormInput } from '@components/FormInput';
+import { FormSelect } from '@components/FormSelect';
+import { FormRadioGroup } from '@components/FormRadioGroup';
+import { FormSearchSelect } from '@components/FormSearchSelect';
+import { Appointment } from '@hooks/useAppointments';
 import { appointmentDurations, appointmentStatuses, procedures, timeSlots } from '../../../constants/constantsAppointments';
+import { Notifications } from '@/components/Notifications';
 
 // ✅ Validación con Zod
 const appointmentSchema = z.object({
@@ -52,12 +53,16 @@ interface AppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (appointmentData: AppointmentFormData) => Promise<Appointment | undefined>;
+  defaultDate?: string;
+  defaultTime?: string;
 }
 
 export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  defaultDate,
+  defaultTime,
 }) => {
   const { patients } = usePatients();
   const { dentists, loading: loadingDentists } = useDentists();
@@ -77,6 +82,8 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
       duration: 60,
       status: '1',
       status_appointments: 'scheduled',
+      date: defaultDate || '',
+      time: defaultTime || '',
     },
   });
 
@@ -108,9 +115,10 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
       setIsNewPatient(true);
       setSearchTerm('');
       onClose();
+      Notifications.success('Cita creada correctamente.');
     } catch (error) {
       console.error('Error creando cita:', error);
-      alert('Ocurrió un error al crear la cita.');
+      Notifications.error('Error al crear la cita. Inténtalo de nuevo.');
     }
   };
 
@@ -150,7 +158,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             {isNewPatient ? (
               <FormInput
                 label="Nombre del paciente *"
-                icon={<User className="h-4 w-4" />}
+                iconLeft={<User className="h-4 w-4" />}
                 placeholder="Ej: María González"
                 registration={register('patient_name')}
                 error={errors.patient_name}
@@ -158,7 +166,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             ) : (
               <FormSearchSelect
                 label="Buscar paciente *"
-                icon={<User className="h-4 w-4" />}
+                iconLeft={<User className="h-4 w-4" />}
                 placeholder="Buscar por nombre o teléfono..."
                 value={searchTerm}
                 options={filteredPatients.map((p) => ({
@@ -180,7 +188,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             {/* Teléfono */}
             <FormInput
               label="Teléfono"
-              icon={<Phone className="h-4 w-4" />}
+              iconLeft={<Phone className="h-4 w-4" />}
               placeholder="+593 99 123 4567"
               registration={register('patient_phone')}
               error={errors.patient_phone}
@@ -191,7 +199,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             <FormInput
               type="date"
               label="Fecha *"
-              icon={<Calendar className="h-4 w-4" />}
+              iconLeft={<Calendar className="h-4 w-4" />}
               registration={register('date')}
               error={errors.date}
             />
@@ -199,7 +207,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             {/* Hora */}
             <FormSelect
               label="Hora *"
-              icon={<Clock className="h-4 w-4" />}
+              iconLeft={<Clock className="h-4 w-4" />}
               registration={register('time')}
               error={errors.time}
               options={timeSlots.map((t) => ({ value: t, label: t }))}
@@ -217,7 +225,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             {/* Odontólogo */}
             <FormSelect
               label="Odontólogo *"
-              icon={<Briefcase className="h-4 w-4" />}
+              iconLeft={<Briefcase className="h-4 w-4" />}
               registration={register('dentist_id')}
               error={errors.dentist_id}
               options={

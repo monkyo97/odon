@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Stethoscope, Eye, EyeOff, User, Mail, Phone, Building } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { especialities } from '../constants/globalConstants';
 
 export const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -88,7 +89,7 @@ export const Register: React.FC = () => {
               <InputField
                 id="name"
                 label="Nombre completo *"
-                icon={<User />}
+                iconLeft={<User />}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Dr. María González"
@@ -98,7 +99,7 @@ export const Register: React.FC = () => {
               <InputField
                 id="email"
                 label="Correo electrónico *"
-                icon={<Mail />}
+                iconLeft={<Mail />}
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -109,7 +110,7 @@ export const Register: React.FC = () => {
               <InputField
                 id="phone"
                 label="Teléfono"
-                icon={<Phone />}
+                iconLeft={<Phone />}
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+593 999 123 456"
@@ -135,7 +136,7 @@ export const Register: React.FC = () => {
             <InputField
                 id="clinicName"
                 label="Nombre de la clínica"
-                icon={<Building />}
+                iconLeft={<Building />}
                 value={formData.clinicName}
                 onChange={(e) => setFormData({ ...formData, clinicName: e.target.value })}
                 placeholder="Clínica Dental González"
@@ -283,14 +284,11 @@ const SelectField: React.FC<SelectProps> = ({ id, label, value, onChange }) => (
       onChange={onChange}
       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
     >
-      <option value="">Seleccionar especialidad</option>
-      <option value="Odontología General">Odontología General</option>
-      <option value="Ortodoncia">Ortodoncia</option>
-      <option value="Endodoncia">Endodoncia</option>
-      <option value="Periodoncia">Periodoncia</option>
-      <option value="Cirugía Oral">Cirugía Oral</option>
-      <option value="Odontopediatría">Odontopediatría</option>
-      <option value="Prostodoncia">Prostodoncia</option>
+      {especialities.map((especiality) => (
+        <option key={especiality.value} value={especiality.value}>
+          {especiality.label}
+        </option>
+      ))}
     </select>
   </div>
 );

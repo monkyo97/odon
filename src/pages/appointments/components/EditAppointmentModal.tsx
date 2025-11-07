@@ -3,12 +3,13 @@ import { X, User, Phone, Calendar, Clock, Briefcase, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FormInput } from '../../../components/FormInput';
-import { FormSelect } from '../../../components/FormSelect';
-import { FormTextArea } from '../../../components/FormTextArea';
-import { useDentists } from '../../../hooks/useDentists';
-import type { Appointment } from '../../../hooks/useAppointments';
+import { FormInput } from '@components/FormInput';
+import { FormSelect } from '@components/FormSelect';
+import { FormTextArea } from '@components/FormTextArea';
+import { useDentists } from '@hooks/useDentists';
+import type { Appointment } from '@hooks/useAppointments';
 import { appointmentDurations, appointmentStatuses, procedures, timeSlots } from '../../../constants/constantsAppointments';
+import { Notifications } from '@/components/Notifications';
 
 // 🧠 Validación con Zod
 const appointmentSchema = z.object({
@@ -93,9 +94,10 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
     try {
       await onSave(data);
       onClose();
+      Notifications.success('Cita actualizada correctamente.');
     } catch (error) {
       console.error('Error actualizando cita:', error);
-      alert('Error al actualizar la cita. Inténtalo nuevamente.');
+      Notifications.error('Error al actualizar la cita. Inténtalo nuevamente.');
     }
   };
 
@@ -119,7 +121,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Nombre del paciente *"
-              icon={<User className="h-4 w-4" />}
+              iconLeft={<User className="h-4 w-4" />}
               placeholder="Ej: María González"
               registration={register('patient_name')}
               error={errors.patient_name}
@@ -128,7 +130,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
             <FormInput
               type="tel"
               label="Teléfono"
-              icon={<Phone className="h-4 w-4" />}
+              iconLeft={<Phone className="h-4 w-4" />}
               placeholder="+593 99 123 4567"
               registration={register('patient_phone')}
               error={errors.patient_phone}
@@ -137,14 +139,14 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
             <FormInput
               type="date"
               label="Fecha *"
-              icon={<Calendar className="h-4 w-4" />}
+              iconLeft={<Calendar className="h-4 w-4" />}
               registration={register('date')}
               error={errors.date}
             />
 
             <FormSelect
               label="Hora *"
-              icon={<Clock className="h-4 w-4" />}
+              iconLeft={<Clock className="h-4 w-4" />}
               registration={register('time')}
               error={errors.time}
               options={timeSlots.map((t) => ({ value: t, label: t }))}
@@ -160,7 +162,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
 
             <FormSelect
               label="Odontólogo *"
-              icon={<Briefcase className="h-4 w-4" />}
+              iconLeft={<Briefcase className="h-4 w-4" />}
               registration={register('dentist_id')}
               error={errors.dentist_id}
               options={

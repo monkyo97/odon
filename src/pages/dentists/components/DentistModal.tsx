@@ -3,7 +3,8 @@ import { X, User, Mail, Phone, Briefcase } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FormInput } from '../../../components/FormInput';
+import { FormInput } from '@components/FormInput';
+import { Notifications } from '@/components/Notifications';
 
 // 🧠 Validación con Zod
 const dentistSchema = z.object({
@@ -43,14 +44,13 @@ export const DentistModal: React.FC<DentistModalProps> = ({ isOpen, onClose, onS
   
   const onSubmit = async (data: DentistFormData) => {
     try {
-      console.log(data);
-      
       await onSave(data);
       reset();
       onClose();
+      Notifications.success('Odontólogo registrado correctamente.');
     } catch (error) {
       console.error('Error creando odontólogo:', error);
-      alert('No se pudo registrar el odontólogo. Intenta de nuevo.');
+      Notifications.error('No se pudo registrar el odontólogo. Intenta de nuevo.');
     }
   };
 
@@ -73,7 +73,7 @@ export const DentistModal: React.FC<DentistModalProps> = ({ isOpen, onClose, onS
           <div className="grid grid-cols-1 gap-4">
             <FormInput
               label="Nombre completo *"
-              icon={<User className="h-4 w-4" />}
+              iconLeft={<User className="h-4 w-4" />}
               placeholder="Ej: Dra. María Pérez"
               registration={register('name')}
               error={errors.name}
@@ -82,7 +82,7 @@ export const DentistModal: React.FC<DentistModalProps> = ({ isOpen, onClose, onS
             <FormInput
               type="email"
               label="Correo electrónico *"
-              icon={<Mail className="h-4 w-4" />}
+              iconLeft={<Mail className="h-4 w-4" />}
               placeholder="odontologo@correo.com"
               registration={register('email')}
               error={errors.email}
@@ -91,7 +91,7 @@ export const DentistModal: React.FC<DentistModalProps> = ({ isOpen, onClose, onS
             <FormInput
               type="tel"
               label="Teléfono"
-              icon={<Phone className="h-4 w-4" />}
+              iconLeft={<Phone className="h-4 w-4" />}
               placeholder="+593 99 123 4567"
               registration={register('phone')}
               error={errors.phone}
@@ -99,7 +99,7 @@ export const DentistModal: React.FC<DentistModalProps> = ({ isOpen, onClose, onS
 
             <FormInput
               label="Especialidad"
-              icon={<Briefcase className="h-4 w-4" />}
+              iconLeft={<Briefcase className="h-4 w-4" />}
               placeholder="Ortodoncia, Endodoncia, etc."
               registration={register('specialty')}
               error={errors.specialty}

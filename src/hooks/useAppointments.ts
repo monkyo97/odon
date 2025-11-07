@@ -177,7 +177,6 @@ export const useAppointments = (page: number = 1) => {
       if (!user || !clinicId) throw new Error('Usuario o clínica no disponible');
 
       const ip = await getIpAddress();
-      console.log('Actualizando cita:', updates);
 
       const payload = {
         ...updates,

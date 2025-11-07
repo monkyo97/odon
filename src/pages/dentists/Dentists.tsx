@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Plus, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useDentists } from '../../hooks/useDentists';
+import { useDentists } from '@hooks/useDentists';
 import { DentistModal } from './components/DentistModal';
 import { DentistCard } from './components/DentistCard';
 

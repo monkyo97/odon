@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Appointment, useAppointments } from '../../../hooks/useAppointments';
+import { Appointment, useAppointments } from '@hooks/useAppointments';
 import {
   timeSlots,
 } from '../../../constants/constantsAppointments';
-import { Legend } from '../../../components/LegendCalendarView';
+import { Legend } from '@components/LegendCalendarView';
 import { AppointmentModal } from './AppointmentModal';
 import { CalendarViewDetail } from './CalendarViewDetail';
 
@@ -112,9 +112,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         <AppointmentModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
-          onSave={() => createAppointment.mutateAsync({} as Appointment)} // corregir
-        //defaultDate={selectedDate}
-        //defaultTime={selectedSlot ?? ''}
+          onSave={(formData) => createAppointment.mutateAsync({ ...formData })}
+          defaultDate={selectedDate}
+          defaultTime={selectedSlot ?? ''}
         />
       )}
     </div>

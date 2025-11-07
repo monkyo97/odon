@@ -1,4 +1,4 @@
-import React, { ReactNode, memo } from 'react';
+import { memo } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Outlet } from 'react-router-dom';
@@ -8,7 +8,6 @@ import { Outlet } from 'react-router-dom';
 // }
 
 export const Layout = memo(() => {
-  console.log('%c[Layout] render', 'color: cyan');
   return (
     <div className="min-h-screen bg-gray-50 lg:flex">
       <Sidebar />

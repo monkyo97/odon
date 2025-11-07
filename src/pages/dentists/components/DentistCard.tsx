@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { ClipboardPlus, Edit, Mail, Phone } from 'lucide-react';
-import { Dentist, useDentists } from '../../../hooks/useDentists';
+import { Dentist, useDentists } from '@hooks/useDentists';
 import { EditDentistModal } from './EditDentistModal';
+import { Notifications } from '@/components/Notifications';
 
 interface DentistCardProps {
   dentist: Dentist;
@@ -12,31 +13,15 @@ export const DentistCard: React.FC<DentistCardProps> = ({ dentist }) => {
   const { updateDentist } = useDentists();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // 🧩 Eliminar odontólogo
-  // const handleDelete = async () => {
-  //   const confirmDelete = window.confirm(
-  //     `¿Deseas eliminar al odontólogo ${dentist.name}? Esta acción no se puede deshacer.`
-  //   );
-  //   if (!confirmDelete) return;
-
-  //   try {
-  //     await deleteDentist.mutateAsync(dentist.id);
-  //     alert('🗑️ Odontólogo eliminado correctamente.');
-  //   } catch (error) {
-  //     console.error('Error eliminando odontólogo:', error);
-  //     alert('❌ Error al eliminar el odontólogo. Inténtalo de nuevo.');
-  //   }
-  // };
-
   // 🧩 Actualizar odontólogo
   const handleUpdate = async (data: Partial<Dentist>) => {
     try {
       await updateDentist.mutateAsync({ id: dentist.id, updates: data });
       setIsEditModalOpen(false);
-      alert('✅ Odontólogo actualizado correctamente.');
+      Notifications.success('Odontólogo actualizado correctamente.');
     } catch (error) {
       console.error('Error actualizando odontólogo:', error);
-      alert('❌ Error al actualizar el odontólogo. Inténtalo de nuevo.');
+      Notifications.error('Error al actualizar el odontólogo. Inténtalo de nuevo.');
     }
   };
 

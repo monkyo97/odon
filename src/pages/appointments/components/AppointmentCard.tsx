@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, Phone, Edit, Trash2 } from 'lucide-react';
-import type { Appointment } from '../../../hooks/useAppointments';
-import { useAppointments } from '../../../hooks/useAppointments';
+import type { Appointment } from '@hooks/useAppointments';
+import { useAppointments } from '@hooks/useAppointments';
 import { EditAppointmentModal } from './EditAppointmentModal';
-import { ConfirmModal } from '../../../components/ConfirmModal';
+import { ConfirmModal } from '@components/ConfirmModal';
 import { appointmentColors, appointmentStatuses } from '../../../constants/constantsAppointments';
+import { Notifications } from '@/components/Notifications';
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -35,9 +36,10 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
     try {
       setIsDeleting(true);
       await deleteAppointment.mutateAsync(appointment.id);
+      Notifications.success('Cita cancelada correctamente.');
     } catch (error) {
       console.error('Error eliminando cita:', error);
-      alert('Error al eliminar la cita. Inténtalo de nuevo.');
+      Notifications.error('Error al eliminar la cita. Inténtalo de nuevo.');
     } finally {
       setIsDeleting(false);
       setIsConfirmOpen(false);
