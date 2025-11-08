@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, Mail, Phone, MapPin, Heart, Calendar } from 'lucide-react';
-import { Patient } from '../hooks/usePatients';
+import { Patient } from '../../../../hooks/usePatients';
 
 interface PatientInfoProps {
   patient: Patient;

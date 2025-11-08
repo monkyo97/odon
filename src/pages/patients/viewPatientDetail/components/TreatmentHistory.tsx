@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Clock, User, Plus, Edit, Trash2, FileText } from 'lucide-react';
-import { useTreatments } from '../hooks/useTreatments';
+import { useTreatments } from '../../../../hooks/useTreatments';
 import { TreatmentModal } from './TreatmentModal';
 import { EditTreatmentModal } from './EditTreatmentModal';
 

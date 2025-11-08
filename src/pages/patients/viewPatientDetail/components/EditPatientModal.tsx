@@ -1,76 +1,81 @@
-import React from 'react';
-import { X, User, Mail, Phone, Calendar } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { X, User, Mail, Phone, Calendar, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FormInput } from '../components/FormInput';
-import { FormTextArea } from '../components/FormTextArea';
-import { Notifications } from './Notifications';
+import type { Patient } from '@/hooks/usePatients';
+import { FormInput } from '@/components/FormInput';
+import { FormTextArea } from '@/components/FormTextArea';
+import { FormSelect } from '@/components/FormSelect';
+import { Notifications } from '@/components/Notifications';
 
-// 🧠 Esquema de validación con Zod
+// 🧠 Validación con Zod
 const patientSchema = z.object({
   name: z.string().min(2, 'El nombre es obligatorio'),
-  email: z.string().email('Correo inválido').optional().or(z.literal('')),
+  email: z.string().email('Correo inválido'),
   phone: z
     .string()
+    .min(6, 'Teléfono inválido')
     .optional()
-    .refine((v) => !v || /^[0-9+\s-]{6,20}$/.test(v), {
-      message: 'Número de teléfono inválido',
-    }),
-  birthDate: z.string().optional(),
+    .or(z.literal('')),
+  birth_date: z.string().nonempty('La fecha de nacimiento es obligatoria'),
   address: z.string().optional(),
-  medicalHistory: z.string().optional(),
-  emergencyContact: z.string().optional(),
-  emergencyPhone: z
-    .string()
-    .optional()
-    .refine((v) => !v || /^[0-9+\s-]{6,20}$/.test(v), {
-      message: 'Número de teléfono inválido',
-    }),
-  clinic_id: z.string().uuid('ID de clínica inválido'),
+  medical_history: z.string().optional(),
+  emergency_contact: z.string().optional(),
+  emergency_phone: z.string().optional(),
+  status: z.enum(['1', '0']).default('1').nonoptional(),
 });
 
-type PatientFormData = z.infer<typeof patientSchema>;
+export type PatientFormData = z.infer<typeof patientSchema>;
 
-interface PatientModalProps {
+interface EditPatientModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (patientData: PatientFormData) => Promise<void>;
+  patient: Patient | null;
+  onSave: (patientData: Partial<Patient>) => Promise<void>;
 }
 
-export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onSave }) => {
-  //const { user } = useAuth();
-
+export const EditPatientModal: React.FC<EditPatientModalProps> = ({
+  isOpen,
+  onClose,
+  patient,
+  onSave,
+}) => {
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors, isSubmitting },
+    reset,
   } = useForm<PatientFormData>({
     resolver: zodResolver(patientSchema),
     defaultValues: {
       name: '',
       email: '',
       phone: '',
-      birthDate: '',
+      birth_date: '',
       address: '',
-      medicalHistory: '',
-      emergencyContact: '',
-      emergencyPhone: '',
+      medical_history: '',
+      emergency_contact: '',
+      emergency_phone: '',
+      status: '1',
     },
   });
 
-  if (!isOpen) return null;
+  // 🔄 Actualiza el formulario al seleccionar un paciente
+  useEffect(() => {
+    if (patient) reset(patient);
+  }, [patient, reset]);
+
+  if (!isOpen || !patient) return null;
 
   const onSubmit = async (data: PatientFormData) => {
     try {
       await onSave(data);
-      reset();
       onClose();
-      Notifications.success('Paciente creado correctamente.');
+      Notifications.success('Paciente actualizado correctamente.');
     } catch (error) {
-      console.error('Error creando paciente:', error);
-      Notifications.error('Error al crear el paciente. Inténtalo de nuevo.');
+      console.error('Error updating patient:', error);
+      Notifications.error('Error al actualizar el paciente. Inténtalo de nuevo.');
     }
   };
 
@@ -79,7 +84,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
       <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Nuevo Paciente</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Editar Paciente</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -95,91 +100,100 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
             <FormInput
               label="Nombre completo *"
               iconLeft={<User className="h-4 w-4" />}
-              placeholder="Ej: María González López"
               registration={register('name')}
               error={errors.name}
+              placeholder="Ej: María González López"
             />
 
             <FormInput
               type="date"
-              label="Fecha de nacimiento"
+              label="Fecha de nacimiento *"
               iconLeft={<Calendar className="h-4 w-4" />}
-              registration={register('birthDate')}
-              error={errors.birthDate}
+              registration={register('birth_date')}
+              error={errors.birth_date}
             />
 
             <FormInput
               type="email"
-              label="Correo electrónico"
+              label="Correo electrónico *"
               iconLeft={<Mail className="h-4 w-4" />}
-              placeholder="maria@email.com"
               registration={register('email')}
               error={errors.email}
+              placeholder="maria@email.com"
             />
 
             <FormInput
               type="tel"
-              label="Teléfono"
+              label="Teléfono *"
               iconLeft={<Phone className="h-4 w-4" />}
-              placeholder="+593 99 123 4567"
               registration={register('phone')}
               error={errors.phone}
+              placeholder="+593 99 123 4567"
+            />
+
+            <FormSelect
+              label="Estado"
+              registration={register('status')}
+              error={errors.status}
+              options={[
+                { value: '1', label: 'Activo' },
+                { value: '0', label: 'Inactivo' },
+              ]}
             />
           </div>
 
           {/* Dirección */}
           <FormInput
             label="Dirección"
-            placeholder="Calle, número, ciudad, código postal"
             registration={register('address')}
             error={errors.address}
+            placeholder="Calle, número, ciudad, código postal"
           />
 
           {/* Contacto de emergencia */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Contacto de emergencia"
+              registration={register('emergency_contact')}
+              error={errors.emergency_contact}
               placeholder="Nombre del contacto"
-              registration={register('emergencyContact')}
-              error={errors.emergencyContact}
             />
 
             <FormInput
               type="tel"
               label="Teléfono de emergencia"
+              registration={register('emergency_phone')}
+              error={errors.emergency_phone}
               placeholder="+593 98 765 4321"
-              registration={register('emergencyPhone')}
-              error={errors.emergencyPhone}
             />
           </div>
 
           {/* Historia médica */}
           <FormTextArea
             label="Historia médica"
+            registration={register('medical_history')}
+            error={errors.medical_history}
             placeholder="Alergias, medicamentos, condiciones médicas relevantes..."
-            registration={register('medicalHistory')}
-            error={errors.medicalHistory}
             rows={4}
           />
 
           {/* Botones */}
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
             <button
               type="button"
-              onClick={() => {
-                reset();
-                onClose();
-              }}
+              onClick={onClose}
               className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Cancelar
             </button>
+
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
             >
-              {isSubmitting ? 'Guardando...' : 'Crear Paciente'}
+              <Save className="h-4 w-4 mr-2" />
+              {isSubmitting ? 'Actualizando...' : 'Actualizar Paciente'}
             </button>
           </div>
         </form>

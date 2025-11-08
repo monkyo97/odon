@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { ToothSVG } from './ToothSVG';
+import { ToothSVG } from '../../../../components/ToothSVG';
 import { DiagnosticModal } from './DiagnosticModal';
 import { OdontogramLegend } from './OdontogramLegend';
 import { OdontogramNotes } from './OdontogramNotes';
-import { useToothConditions } from '../hooks/useToothConditions';
-import { Edit, Trash2, Plus, FileText, AlertCircle, Stethoscope } from 'lucide-react';
+import { useToothConditions } from '../../../../hooks/useToothConditions';
+import { Trash2, Plus, AlertCircle, Stethoscope } from 'lucide-react';
 
 export interface ToothCondition {
   id: string;

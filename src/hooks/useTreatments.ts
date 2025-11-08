@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import type { Treatment } from '../components/TreatmentHistory';
+import type { Treatment } from '../pages/patients/viewPatientDetail/components/TreatmentHistory';
 
 export const useTreatments = (patientId: string) => {
   const [treatments, setTreatments] = useState<Treatment[]>([]);

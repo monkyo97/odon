@@ -18,10 +18,8 @@ export const DentistCard: React.FC<DentistCardProps> = ({ dentist }) => {
     try {
       await updateDentist.mutateAsync({ id: dentist.id, updates: data });
       setIsEditModalOpen(false);
-      Notifications.success('Odontólogo actualizado correctamente.');
     } catch (error) {
       console.error('Error actualizando odontólogo:', error);
-      Notifications.error('Error al actualizar el odontólogo. Inténtalo de nuevo.');
     }
   };
 

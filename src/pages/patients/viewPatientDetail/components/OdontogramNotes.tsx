@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, FileText, AlertTriangle, Pill, User } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../../../../lib/supabase';
+import { useAuth } from '../../../../contexts/AuthContext';
 
 interface OdontogramNotesProps {
   patientId: string;

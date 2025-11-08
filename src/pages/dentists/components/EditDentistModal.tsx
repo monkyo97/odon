@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
-import { X, User, Mail, Phone, Briefcase, BookMarked, Save } from 'lucide-react';
+import { X, User, Mail, Phone, BookMarked, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormInput } from '@components/FormInput';
 import { FormSelect } from '@components/FormSelect';
-import { statusOptions } from '../../../constants/globalConstants';
+import { especialities, statusOptions } from '../../../constants/globalConstants';
 import { Notifications } from '@/components/Notifications';
 
 // 🧠 Validación con Zod
@@ -119,12 +119,24 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
               error={errors.phone}
             />
 
-            <FormInput
+            {/* <FormInput
               label="Especialidad"
               iconLeft={<Briefcase className="h-4 w-4" />}
               placeholder="Ortodoncia, Endodoncia, etc."
               registration={register('specialty')}
               error={errors.specialty}
+            /> */}
+
+            <FormSelect
+              label="Especialidad *"
+              registration={register('specialty')}
+              error={errors.specialty}
+              options={
+                especialities.map((especiality) => ({
+                  label: especiality.label,
+                  value: especiality.value,
+                }))
+              }
             />
 
             <FormInput

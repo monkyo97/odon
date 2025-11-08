@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import type { ToothCondition } from '../components/Odontogram';
+import type { ToothCondition } from '../pages/patients/viewPatientDetail/components/Odontogram';
 
 export const useToothConditions = (patientId: string) => {
   const [conditions, setConditions] = useState<ToothCondition[]>([]);

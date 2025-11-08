@@ -5,6 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormInput } from '@components/FormInput';
 import { Notifications } from '@/components/Notifications';
+import { FormSelect } from '@/components/FormSelect';
+import { especialities } from '@/constants/globalConstants';
 
 // 🧠 Validación con Zod
 const dentistSchema = z.object({
@@ -97,12 +99,24 @@ export const DentistModal: React.FC<DentistModalProps> = ({ isOpen, onClose, onS
               error={errors.phone}
             />
 
-            <FormInput
+            {/* <FormInput
               label="Especialidad"
               iconLeft={<Briefcase className="h-4 w-4" />}
               placeholder="Ortodoncia, Endodoncia, etc."
               registration={register('specialty')}
               error={errors.specialty}
+            /> */}
+
+            <FormSelect
+              label="Especialidad *"
+              registration={register('specialty')}
+              error={errors.specialty}
+              options={
+                especialities.map((especiality) => ({
+                  label: especiality.label,
+                  value: especiality.value,
+                }))
+              }
             />
 
             <FormInput

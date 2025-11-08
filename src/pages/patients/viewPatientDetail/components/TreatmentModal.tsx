@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Save, FileText, DollarSign } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../../../contexts/AuthContext';
 import type { Treatment } from './TreatmentHistory';
 
 interface TreatmentModalProps {

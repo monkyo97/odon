@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Plus, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
-import { PatientCard } from '../components/PatientCard';
-import { PatientModal } from '../components/PatientModal';
-import { usePatients } from '../hooks/usePatients';
+import { PatientCard } from './components/PatientCard';
+import { PatientModal } from './components/PatientModal';
+import { usePatients } from '../../../hooks/usePatients';
 
 const PAGE_SIZE = 20;
 

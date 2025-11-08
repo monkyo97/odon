@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { User, Phone, Mail, Calendar } from 'lucide-react';
-import { Patient } from '../hooks/usePatients';
+import { Patient } from '@/hooks/usePatients';
 
 interface PatientCardProps {
   patient: Patient;
@@ -12,7 +12,7 @@ export const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
   return (
     <Link 
       to={`/patients/${patient.id}`}
-      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 hover:border-blue-300 group"
+      className="bg-white border border-gray-200 rounded-lg p-4 transition-all duration-200 hover:border-blue-300 group hover:bg-blue-50"
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center">

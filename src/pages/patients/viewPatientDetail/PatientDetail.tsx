@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Edit, Calendar, FileText, Bluetooth as Tooth, Trash2 } from 'lucide-react';
-import { Odontogram } from '../components/Odontogram';
-import { PatientInfo } from '../components/PatientInfo';
-import { TreatmentHistory } from '../components/TreatmentHistory';
-import { EditPatientModal } from '../components/EditPatientModal';
-import { usePatients } from '../hooks/usePatients';
-import { PatientAppointments } from '../components/PatientAppointments';
-import { ConfirmModal } from '../components/ConfirmModal';
+import { Odontogram } from './components/Odontogram';
+import { PatientInfo } from './components/PatientInfo';
+import { TreatmentHistory } from './components/TreatmentHistory';
+import { EditPatientModal } from './components/EditPatientModal';
+import { usePatients } from '@/hooks/usePatients';
+import { PatientAppointments } from './components/PatientAppointments';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { Notifications } from '@/components/Notifications';
 
 
