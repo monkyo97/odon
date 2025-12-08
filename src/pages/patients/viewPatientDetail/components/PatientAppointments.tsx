@@ -1,26 +1,24 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Plus, User, FileText } from 'lucide-react';
-import { useAppointments } from '../../../../hooks/useAppointments';
+import { Calendar, Clock, Plus, User, FileText, Edit, Trash2 } from 'lucide-react';
+import { useAppointments, Appointment } from '../../../../hooks/useAppointments';
 import { AppointmentModal } from '../../../appointments/components/AppointmentModal';
-import { usePatients } from '../../../../hooks/usePatients';
 import { appointmentColors, appointmentStatuses } from '../../../../constants/constantsAppointments';
+import { ConfirmModal } from '@/components/ConfirmModal';
+import { Notifications } from '@/components/Notifications';
 
 interface PatientAppointmentsProps {
   patientId: string;
 }
 
 export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patientId }) => {
-  const { appointments, loading, createAppointment } = useAppointments();
-  const { patients } = usePatients();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // 🧠 Usamos el hook filtrado por patientId
+  const { appointments, loading, createAppointment, updateAppointment, deleteAppointment } = useAppointments(1, patientId);
 
-  // Find the patient
-  const patient = patients.find(p => p.id === patientId);
-  
-  // Filter appointments for this patient
-  const patientAppointments = appointments.filter(apt => 
-    apt.patientId === patientId || apt.patient_name === patient?.name
-  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [appointmentToEdit, setAppointmentToEdit] = useState<Appointment | null>(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null);
 
   const getStatusColor = (status: string) => {
     return appointmentColors[status as keyof typeof appointmentColors] || 'bg-gray-100 text-gray-800';
@@ -30,11 +28,46 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
     return appointmentStatuses.find(s => s.value === status)?.label || status;
   };
 
-  const sortedAppointments = patientAppointments.sort((a, b) => {
-    const dateA = new Date(`${a.date} ${a.time}`);
-    const dateB = new Date(`${b.date} ${b.time}`);
-    return dateB.getTime() - dateA.getTime(); // Most recent first
-  });
+  // 🧠 Manejo de Guardado (Crear o Editar)
+  const handleSave = async (data: any) => {
+    if (appointmentToEdit) {
+      // Editar
+      return await updateAppointment.mutateAsync(data);
+    } else {
+      // Crear
+      return await createAppointment.mutateAsync(data);
+    }
+  };
+
+  const handleEdit = (appointment: Appointment) => {
+    setAppointmentToEdit(appointment);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setAppointmentToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (appointmentToDelete) {
+      try {
+        await deleteAppointment.mutateAsync(appointmentToDelete);
+        Notifications.success('Cita cancelada correctamente');
+      } catch (error) {
+        console.error(error);
+        Notifications.error('Error al cancelar la cita');
+      } finally {
+        setIsDeleteModalOpen(false);
+        setAppointmentToDelete(null);
+      }
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setAppointmentToEdit(null);
+  };
 
   if (loading) {
     return (
@@ -49,7 +82,10 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Historial de Citas</h3>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setAppointmentToEdit(null);
+            setIsModalOpen(true);
+          }}
           className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -57,19 +93,19 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
         </button>
       </div>
 
-      {sortedAppointments.length > 0 ? (
+      {appointments.length > 0 ? (
         <div className="space-y-4">
-          {sortedAppointments.map((appointment) => (
+          {appointments.map((appointment) => (
             <div key={appointment.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
                     <h4 className="font-medium text-gray-900">{appointment.procedure}</h4>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
-                      {getStatusLabel(appointment.status)}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status_appointments)}`}>
+                      {getStatusLabel(appointment.status_appointments)}
                     </span>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-600 mb-3">
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2" />
@@ -81,7 +117,7 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
                     </div>
                     <div className="flex items-center">
                       <User className="h-4 w-4 mr-2" />
-                      {appointment.dentist}
+                      {appointment.dentist?.name || 'No asignado'}
                     </div>
                   </div>
 
@@ -94,13 +130,21 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex items-center space-x-2 ml-4">
-                  <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                  <button
+                    onClick={() => handleEdit(appointment)}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
                     Editar
                   </button>
-                  {appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
-                    <button className="text-red-600 hover:text-red-800 text-sm font-medium">
+                  {appointment.status_appointments !== 'completed' && appointment.status_appointments !== 'cancelled' && (
+                    <button
+                      onClick={() => handleDeleteClick(appointment.id)}
+                      className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
                       Cancelar
                     </button>
                   )}
@@ -122,11 +166,22 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
         </div>
       )}
 
-      {/*REVISAR AL CERRAR QUE SE ACTUALICE*/}
-      <AppointmentModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onSave={createAppointment.mutateAsync}
+      <AppointmentModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSave={handleSave}
+        appointmentToEdit={appointmentToEdit}
+        preselectedPatientId={patientId}
+      />
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Cancelar Cita"
+        message="¿Estás seguro de que deseas cancelar esta cita? Esta acción no se puede deshacer."
+        confirmText="Sí, cancelar"
+        cancelText="No, mantener"
       />
     </div>
   );

@@ -1,61 +1,44 @@
-// src/components/odontogram/OdontogramSidebar.tsx
-import React, { useMemo, useState } from 'react';
-import { TREATMENTS, type TreatmentCategory } from '@constants/odontogram';
-import { Search } from 'lucide-react';
+import React from 'react';
+import { TOOLBAR_TOOLS } from '../../../../../constants/odontogram';
+import { ToothConditionType } from '../../../../../types/odontogram';
 
-type Props = {
-  onPickTreatment: (name: string) => void;
-};
+interface OdontogramSidebarProps {
+  selectedTool: ToothConditionType | null;
+  onSelectTool: (tool: ToothConditionType) => void;
+}
 
-export const OdontogramSidebar: React.FC<Props> = ({ onPickTreatment }) => {
-  const [tab, setTab] = useState<TreatmentCategory>('todos');
-  const [q, setQ] = useState('');
-
-  const filtered = useMemo(() => {
-    return TREATMENTS.filter(t =>
-      (tab === 'todos' || t.category === tab) &&
-      t.name.toLowerCase().includes(q.toLowerCase())
-    );
-  }, [tab, q]);
-
+export const OdontogramSidebar: React.FC<OdontogramSidebarProps> = ({ selectedTool, onSelectTool }) => {
   return (
-    <aside className="w-full md:w-80 border rounded-xl p-4 bg-white">
-      <h4 className="font-semibold text-blue-700 mb-2">Odontograma</h4>
+    <div className="bg-white border rounded-xl p-4 shadow-sm h-full  overflow-y-auto">
+      <h3 className="font-semibold text-gray-900 mb-4">Herramientas</h3>
 
-      <div className="relative mb-3">
-        <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
-        <input
-          className="pl-8 pr-3 py-2 w-full border rounded-lg text-sm"
-          placeholder="Busca un tratamiento…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-      </div>
-
-      <div className="flex gap-2 text-xs mb-3">
-        {(['todos','individuales','generales','pediatrico'] as TreatmentCategory[]).map(t => (
+      <div className="space-y-2">
+        {TOOLBAR_TOOLS.map((tool) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-3 py-1 rounded-full border ${tab===t ? 'bg-blue-600 text-white border-blue-600' : ''}`}
+            key={tool.id}
+            onClick={() => onSelectTool(tool.id)}
+            className={`w-full flex items-center p-3 rounded-lg transition-all ${selectedTool === tool.id
+              ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500'
+              : 'bg-white border border-gray-200 hover:bg-gray-50'
+              }`}
           >
-            {t[0].toUpperCase()+t.slice(1)}
+            <div
+              className="w-4 h-4 rounded-full mr-3 border border-gray-300"
+              style={{ backgroundColor: tool.color }}
+            />
+            <span className="text-sm font-medium text-gray-700">{tool.label}</span>
           </button>
         ))}
       </div>
 
-      <div className="space-y-2 max-h-72 overflow-auto">
-        {filtered.map(t => (
-          <button
-            key={t.id}
-            className="w-full text-left border rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
-            onClick={() => onPickTreatment(t.name)}
-          >
-            {t.name}
-          </button>
-        ))}
-        {filtered.length === 0 && <p className="text-xs text-gray-500">Sin resultados</p>}
+      <div className="mt-6 p-4 bg-gray-50 rounded-lg text-xs text-gray-500">
+        <p className="font-medium mb-1">Instrucciones:</p>
+        <ol className="list-decimal pl-4 space-y-1">
+          <li>Selecciona una herramienta.</li>
+          <li>Haz clic en la superficie del diente para aplicar.</li>
+          <li>Para borrar, selecciona "Sano" (Sano) y haz clic.</li>
+        </ol>
       </div>
-    </aside>
+    </div>
   );
 };

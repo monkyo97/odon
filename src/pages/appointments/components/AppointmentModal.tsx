@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Calendar,
@@ -52,9 +52,11 @@ type AppointmentFormData = z.infer<typeof appointmentSchema>;
 interface AppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (appointmentData: AppointmentFormData) => Promise<Appointment | undefined>;
+  onSave: (appointmentData: any) => Promise<Appointment | undefined>;
   defaultDate?: string;
   defaultTime?: string;
+  appointmentToEdit?: Appointment | null;
+  preselectedPatientId?: string;
 }
 
 export const AppointmentModal: React.FC<AppointmentModalProps> = ({
@@ -63,6 +65,8 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   onSave,
   defaultDate,
   defaultTime,
+  appointmentToEdit,
+  preselectedPatientId,
 }) => {
   const { patients } = usePatients();
   const { dentists, loading: loadingDentists } = useDentists();
@@ -75,6 +79,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
@@ -87,15 +92,61 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     },
   });
 
+  // 🧠 Efecto para cargar datos al editar o preseleccionar paciente
+  useEffect(() => {
+    if (isOpen) {
+      if (appointmentToEdit) {
+        // Modo Edición
+        setIsNewPatient(false);
+        setValue('patient_id', appointmentToEdit.patient_id);
+        setValue('patient_name', appointmentToEdit.patient_name || '');
+        setValue('patient_phone', appointmentToEdit.patient_phone || '');
+        setValue('dentist_id', appointmentToEdit.dentist_id || '');
+        setValue('date', appointmentToEdit.date);
+        setValue('time', appointmentToEdit.time);
+        setValue('duration', appointmentToEdit.duration || 60);
+        setValue('procedure', appointmentToEdit.procedure || '');
+        setValue('notes', appointmentToEdit.notes || '');
+        setValue('status_appointments', appointmentToEdit.status_appointments);
+        setSearchTerm(appointmentToEdit.patient_name || '');
+      } else if (preselectedPatientId) {
+        // Modo Nuevo con Paciente Preseleccionado
+        const patient = patients.find(p => p.id === preselectedPatientId);
+        if (patient) {
+          setIsNewPatient(false);
+          setValue('patient_id', patient.id);
+          setValue('patient_name', patient.name);
+          setValue('patient_phone', patient.phone || '');
+          setSearchTerm(patient.name);
+        }
+        setValue('date', defaultDate || '');
+        setValue('time', defaultTime || '');
+        setValue('status_appointments', 'scheduled');
+      } else {
+        // Modo Nuevo (Reset)
+        reset({
+          duration: 60,
+          status: '1',
+          status_appointments: 'scheduled',
+          date: defaultDate || '',
+          time: defaultTime || '',
+        });
+        setIsNewPatient(true);
+        setSearchTerm('');
+      }
+    }
+  }, [isOpen, appointmentToEdit, preselectedPatientId, patients, defaultDate, defaultTime, reset, setValue]);
+
+
   if (!isOpen) return null;
 
   // 🔍 Filtrar pacientes por nombre o teléfono
   const filteredPatients = searchTerm
     ? patients.filter(
-        (p) =>
-          p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.phone?.includes(searchTerm)
-      )
+      (p) =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.phone?.includes(searchTerm)
+    )
     : patients;
 
   // 📋 Selección de paciente existente
@@ -110,15 +161,19 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   // 💾 Enviar formulario
   const onSubmit = async (data: AppointmentFormData) => {
     try {
-      await onSave(data);
+      // Si estamos editando, pasamos el ID también (aunque onSave suele esperar solo data, el padre manejará la lógica)
+      const payload = appointmentToEdit ? { id: appointmentToEdit.id, updates: data } : data;
+
+      await onSave(payload);
+
       reset();
       setIsNewPatient(true);
       setSearchTerm('');
       onClose();
-      Notifications.success('Cita creada correctamente.');
+      Notifications.success(appointmentToEdit ? 'Cita actualizada correctamente.' : 'Cita creada correctamente.');
     } catch (error) {
-      console.error('Error creando cita:', error);
-      Notifications.error('Error al crear la cita. Inténtalo de nuevo.');
+      console.error('Error guardando cita:', error);
+      Notifications.error('Error al guardar la cita. Inténtalo de nuevo.');
     }
   };
 
@@ -127,7 +182,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
       <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Nueva Cita</h2>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {appointmentToEdit ? 'Editar Cita' : 'Nueva Cita'}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -138,20 +195,22 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
 
         {/* Formulario */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-          {/* Radio: paciente nuevo */}
-          <FormRadioGroup
-            label="¿Es paciente nuevo?"
-            options={[
-              { label: 'Sí', value: true },
-              { label: 'No', value: false },
-            ]}
-            value={isNewPatient}
-            onChange={(val) => {
-              setIsNewPatient(Boolean(val));
-              if (val) setValue('patient_id', undefined);
-              else setSearchTerm('');
-            }}
-          />
+          {/* Radio: paciente nuevo (Solo si no hay paciente preseleccionado ni estamos editando) */}
+          {!preselectedPatientId && !appointmentToEdit && (
+            <FormRadioGroup
+              label="¿Es paciente nuevo?"
+              options={[
+                { label: 'Sí', value: true },
+                { label: 'No', value: false },
+              ]}
+              value={isNewPatient}
+              onChange={(val) => {
+                setIsNewPatient(Boolean(val));
+                if (val) setValue('patient_id', undefined);
+                else setSearchTerm('');
+              }}
+            />
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Paciente */}
@@ -162,11 +221,12 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                 placeholder="Ej: María González"
                 registration={register('patient_name')}
                 error={errors.patient_name}
+                disabled={!!preselectedPatientId || !!appointmentToEdit}
               />
             ) : (
               <FormSearchSelect
                 label="Buscar paciente *"
-                iconLeft={<User className="h-4 w-4" />}
+                icon={<User className="h-4 w-4" />}
                 placeholder="Buscar por nombre o teléfono..."
                 value={searchTerm}
                 options={filteredPatients.map((p) => ({
@@ -182,6 +242,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                     phone: option.description,
                   })
                 }
+                disabled={!!preselectedPatientId || !!appointmentToEdit}
               />
             )}
 
@@ -192,7 +253,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               placeholder="+593 99 123 4567"
               registration={register('patient_phone')}
               error={errors.patient_phone}
-              disabled={!isNewPatient}
+              disabled={!isNewPatient && !preselectedPatientId && !appointmentToEdit}
             />
 
             {/* Fecha */}
@@ -232,9 +293,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                 loadingDentists
                   ? [{ value: '', label: 'Cargando...' }]
                   : dentists.map((d) => ({
-                      value: d.id,
-                      label: `${d.name} — ${d.specialty || 'General'}`,
-                    }))
+                    value: d.id,
+                    label: `${d.name} — ${d.specialty || 'General'}`,
+                  }))
               }
               placeholder="Seleccionar odontólogo"
             />
@@ -242,7 +303,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             {/* Estado funcional */}
             <FormSelect
               label="Estado de la cita *"
-              registration={register('status_appointments', { required: true})}
+              registration={register('status_appointments', { required: true })}
               error={errors.status_appointments}
               options={appointmentStatuses}
             />
@@ -290,7 +351,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
             >
               <Save className="h-4 w-4 mr-2" />
-              {isSubmitting ? 'Programando...' : 'Programar Cita'}
+              {isSubmitting ? 'Guardando...' : (appointmentToEdit ? 'Actualizar Cita' : 'Programar Cita')}
             </button>
           </div>
         </form>

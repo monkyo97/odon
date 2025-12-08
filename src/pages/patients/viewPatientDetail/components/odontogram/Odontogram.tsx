@@ -1,133 +1,176 @@
-// src/components/odontogram/Odontogram.tsx
 import React, { useState } from 'react';
-import { UPPER_FDI, LOWER_FDI, STATUS_FLOW } from '@constants/odontogram';
 import { useParams } from 'react-router-dom';
-import { useToothConditions } from '@hooks/useToothConditions';
-import { useOdontogramState } from '@hooks/useOdontogramState';
-import { Notifications } from '@components/Notifications';
-import { Tooth } from './Tooth';
-import { DiagnosticModal } from './DiagnosticModal';
+import { useOdontogram } from '@hooks/useOdontogram';
+import { ToothSVG } from '@components/odontogram/ToothSVG';
 import { OdontogramSidebar } from './OdontogramSidebar';
-import { Loader2 } from 'lucide-react';
+import { UPPER_FDI, LOWER_FDI } from '@constants/odontogram';
+import { ToothConditionType, Surface } from '@/types/odontogram';
+import { Loader2, Save, History, Plus, Menu, X } from 'lucide-react';
+import { Notifications } from '@/components/Notifications';
 
-export const Odontogram: React.FC = () => {
-  const { id: patientId } = useParams<{ id: string }>();
-  const { conditions, loading, createCondition, refetch } = useToothConditions(patientId);
-  const { selectedTooth, setSelectedTooth, resetSelection } = useOdontogramState();
+interface OdontogramProps {
+  patientId: string;
+}
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [pendingTreatment, setPendingTreatment] = useState<string | null>(null);
+export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
+  const {
+    latestOdontogram,
+    conditions,
+    loading,
+    saveCondition,
+    createOdontogram
+  } = useOdontogram(patientId);
 
-  const handleToothClick = (n: number) => {
-    setSelectedTooth(n);
-    setIsModalOpen(true);
-  };
+  const [selectedTool, setSelectedTool] = useState<ToothConditionType | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const onPickTreatment = (name: string) => {
-    setPendingTreatment(name);
-    if (!selectedTooth) setIsModalOpen(true);
-  };
+  const handleSurfaceClick = async (toothNumber: number, surface: Surface) => {
+    if (!selectedTool) {
+      Notifications.info('Selecciona una herramienta primero');
+      return;
+    }
 
-  const handleSave = async (form: any) => {
+    if (!latestOdontogram) {
+      Notifications.error('No hay un odontograma activo. Crea uno nuevo.');
+      return;
+    }
+
     try {
-      for (const surface of form.surfaces) {
-        await createCondition.mutateAsync({
-          patient_id: patientId!,
-          tooth_number: form.toothNumber,
-          surface,
-          condition: pendingTreatment || form.condition,
-          status_tooth_conditions: form.status,
-          notes: form.notes,
-          date: new Date().toISOString().slice(0,10),
-        });
-      }
-      Notifications.success('Diagnóstico guardado');
-      setIsModalOpen(false);
-      setPendingTreatment(null);
-      resetSelection();
-      await refetch();
-    } catch (e: any) {
-      Notifications.error(e.message ?? 'Error guardando diagnóstico');
+      await saveCondition.mutateAsync({
+        odontogramId: latestOdontogram.id,
+        toothNumber,
+        surface,
+        condition: selectedTool,
+      });
+    } catch (error) {
+      console.error(error);
+      Notifications.error('Error al guardar el diagnóstico');
     }
   };
 
+  const handleCreateVersion = async () => {
+    try {
+      setSaving(true);
+      await createOdontogram.mutateAsync(`Evolución ${new Date().toLocaleDateString()}`);
+      Notifications.success('Nueva versión del odontograma creada');
+    } catch (error) {
+      Notifications.error('Error al crear versión');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[1fr,20rem] gap-4">
-      <div className="bg-white border rounded-xl p-4 space-y-4 overflow-hidden">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Odontograma Internacional FDI</h3>
-          <div className="text-sm text-gray-500">
-            Completados:
-            <span className="ml-1 text-green-600 font-medium">
-              {conditions.filter(c => c.status_tooth_conditions==='completado').length}
-            </span>
-            {' '}• Pendientes:
-            <span className="ml-1 text-yellow-600 font-medium">
-              {conditions.filter(c => c.status_tooth_conditions!=='completado').length}
-            </span>
+    <div className="relative flex flex-col h-[calc(100vh-200px)]">
+      {/* Header with Hamburger */}
+      <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-xl border shadow-sm">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title={isSidebarOpen ? "Cerrar herramientas" : "Abrir herramientas"}
+          >
+            {isSidebarOpen ? <X className="h-6 w-6 text-gray-600" /> : <Menu className="h-6 w-6 text-gray-600" />}
+          </button>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Odontograma</h2>
+            <p className="text-sm text-gray-500">
+              {latestOdontogram
+                ? `${latestOdontogram.name} - ${new Date(latestOdontogram.date).toLocaleDateString()}`
+                : 'Sin odontograma registrado'}
+            </p>
           </div>
         </div>
 
-        {loading ? (
-          <div className="h-40 flex items-center justify-center text-gray-500">
-            <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Cargando…
-          </div>
-        ) : (
-          <div className="w-full overflow-x-auto">
-            <div className="min-w-[900px] mx-auto space-y-4">
-              <p className="text-center text-gray-600">Arcada Superior</p>
-              <div className="flex justify-center flex-wrap gap-3">
-                {UPPER_FDI.map(n => (
-                  <Tooth
-                    key={n}
-                    number={n}
-                    conditions={conditions.filter(c => c.tooth_number === n)}
-                    selected={selectedTooth === n}
-                    onClick={() => handleToothClick(n)}
-                  />
-                ))}
-              </div>
-
-              <p className="text-center text-gray-400 text-sm">Línea Media</p>
-
-              <p className="text-center text-gray-600">Arcada Inferior</p>
-              <div className="flex justify-center flex-wrap gap-3">
-                {LOWER_FDI.map(n => (
-                  <Tooth
-                    key={n}
-                    number={n}
-                    conditions={conditions.filter(c => c.tooth_number === n)}
-                    selected={selectedTooth === n}
-                    onClick={() => handleToothClick(n)}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* leyenda simple */}
-        <div className="border-t pt-3 text-xs text-gray-600 flex gap-4 flex-wrap">
-          {STATUS_FLOW.map(s => (
-            <span key={s.value} className="inline-flex items-center gap-2">
-              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: s.dot }} />
-              {s.label}
-            </span>
-          ))}
+        <div className="flex gap-2">
+          {!latestOdontogram && (
+            <button
+              onClick={handleCreateVersion}
+              disabled={saving}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Crear Inicial
+            </button>
+          )}
+          {latestOdontogram && (
+            <button
+              onClick={handleCreateVersion}
+              disabled={saving}
+              className="flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+            >
+              <History className="h-4 w-4 mr-2" />
+              Nueva Versión
+            </button>
+          )}
         </div>
       </div>
 
-      <OdontogramSidebar onPickTreatment={onPickTreatment} />
+      <div className="flex flex-1 relative overflow-hidden gap-6">
+        {/* Main Odontogram Area */}
+        <div className="flex-1 bg-white border rounded-xl p-6 overflow-y-auto shadow-sm flex flex-col">
+          {/* Teeth Grid */}
+          <div className="flex-1 flex flex-col justify-center items-center space-y-8 min-w-[800px] overflow-x-auto">
+            {/* Upper Arch */}
+            <div className="flex gap-1 justify-center">
+              {UPPER_FDI.map((number) => (
+                <ToothSVG
+                  key={number}
+                  number={number}
+                  conditions={conditions.filter(c => c.tooth_number === number)}
+                  onSurfaceClick={(surface) => handleSurfaceClick(number, surface)}
+                />
+              ))}
+            </div>
 
-      {isModalOpen && selectedTooth && (
-        <DiagnosticModal
-          isOpen
-          toothNumber={selectedTooth}
-          onClose={() => { setIsModalOpen(false); }}
-          onSave={handleSave}
-          defaultSurfaces={['oclusal']}
-        />
-      )}
+            <div className="w-full border-t border-dashed border-gray-300"></div>
+
+            {/* Lower Arch */}
+            <div className="flex gap-1 justify-center">
+              {LOWER_FDI.map((number) => (
+                <ToothSVG
+                  key={number}
+                  number={number}
+                  conditions={conditions.filter(c => c.tooth_number === number)}
+                  onSurfaceClick={(surface) => handleSurfaceClick(number, surface)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Collapsible Sidebar / Toolbox */}
+        <div
+          className={`
+            absolute top-0 right-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-20
+            ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}
+            lg:relative lg:transform-none lg:w-80 lg:shadow-none lg:bg-transparent
+            ${isSidebarOpen ? 'lg:block' : 'lg:hidden'}
+          `}
+        >
+          <OdontogramSidebar
+            selectedTool={selectedTool}
+            onSelectTool={setSelectedTool}
+          />
+        </div>
+
+        {/* Overlay for mobile when sidebar is open */}
+        {isSidebarOpen && (
+          <div
+            className="absolute inset-0 bg-black/20 z-10 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+      </div>
     </div>
   );
 };

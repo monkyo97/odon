@@ -27,44 +27,20 @@ export interface Appointment {
 
 const PAGE_SIZE = 20;
 
-export const useAppointments = (page: number = 1) => {
+export const useAppointments = (page: number = 1, patientId?: string) => {
   const { clinicId, user } = useAuth();
   const queryClient = useQueryClient();
 
   // -------------------------------
   // 🔹 Obtener listado de citas
   // -------------------------------
-  // const fetchAppointments = async () => {
-  //   if (!clinicId) return { data: [], count: 0, totalPages: 1 };
-
-  //   const from = (page - 1) * PAGE_SIZE;
-  //   const to = from + PAGE_SIZE - 1;
-
-  //   const { data, error, count } = await supabase
-  //     .from('appointments')
-  //     .select('*', { count: 'exact' })
-  //     .eq('clinic_id', clinicId)
-  //     //.eq('status', '1') // si deseas solo activas
-  //     .order('date', { ascending: true })
-  //     .order('time', { ascending: true })
-  //     .range(from, to);
-
-  //   if (error) throw new Error(error.message);
-
-  //   return {
-  //     data: data || [],
-  //     count: count || 0,
-  //     totalPages: Math.max(1, Math.ceil((count || 0) / PAGE_SIZE)),
-  //   };
-  // };
-
   const fetchAppointments = async () => {
     if (!clinicId) return { data: [], count: 0, totalPages: 1 };
 
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const { data, error, count } = await supabase
+    let query = supabase
       .from('appointments')
       .select(
         `*, 
@@ -73,8 +49,15 @@ export const useAppointments = (page: number = 1) => {
             name,
             specialty
         )`, { count: 'exact' })
-      .eq('clinic_id', clinicId)
-      // Traemos en orden descendente de fecha y hora
+      .eq('clinic_id', clinicId);
+
+    // 🧠 Si hay patientId, filtramos por él
+    if (patientId) {
+      query = query.eq('patient_id', patientId);
+    }
+
+    // Traemos en orden descendente de fecha y hora
+    const { data, error, count } = await query
       .order('date', { ascending: false })
       .order('time', { ascending: false })
       .range(from, to);
@@ -115,7 +98,7 @@ export const useAppointments = (page: number = 1) => {
 
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ['appointments', clinicId, page],
+    queryKey: ['appointments', clinicId, page, patientId], // 🧠 Agregamos patientId a la key
     queryFn: fetchAppointments,
     enabled: !!clinicId, // solo cuando haya clínica activa
     staleTime: 1000 * 60 * 5, // 5 min antes de volver a refrescar
