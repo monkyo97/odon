@@ -1,149 +1,95 @@
-import { useState, useEffect } from 'react';
+// src/hooks/useToothConditions.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
-import type { ToothCondition } from '../pages/patients/viewPatientDetail/components/Odontogram';
+import { useAuth } from '@contexts/AuthContext';
 
-export const useToothConditions = (patientId: string) => {
-  const [conditions, setConditions] = useState<ToothCondition[]>([]);
-  const [loading, setLoading] = useState(true);
+export interface ToothCondition {
+  id?: string;
+  patient_id: string;
+  tooth_number: number;
+  surface:
+    | 'oclusal' | 'vestibular' | 'lingual'
+    | 'mesial'  | 'distal'     | 'incisal'
+    | 'cervical'| 'completa';
+  condition: string;
+  status_tooth_conditions?: 'planificado' | 'en_proceso' | 'completado';
+  notes?: string;
+  date?: string;
+  status?: '1' | '0';
+  created_by_user?: string;
+  created_date?: string;
+  updated_by_user?: string;
+  updated_date?: string;
+}
+
+export const useToothConditions = (patientId?: string) => {
   const { user } = useAuth();
+  const qc = useQueryClient();
 
-  const fetchConditions = async () => {
-    if (!user || !patientId) return;
-    
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('tooth_conditions')
-        .select('*')
-        .eq('patient_id', patientId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      const formattedConditions = data?.map(item => ({
-        id: item.id,
-        toothNumber: item.tooth_number,
-        surface: item.surface,
-        condition: item.condition,
-        status: item.status,
-        notes: item.notes || '',
-        date: item.date
-      })) || [];
-      
-      setConditions(formattedConditions);
-    } catch (error) {
-      console.error('Error fetching tooth conditions:', error);
-    } finally {
-      setLoading(false);
-    }
+  const fetcher = async (): Promise<ToothCondition[]> => {
+    if (!patientId) return [];
+    const { data, error } = await supabase
+      .from('tooth_conditions')
+      .select('*')
+      .eq('patient_id', patientId)
+      .eq('status', '1')
+      .order('tooth_number', { ascending: true });
+    if (error) throw error;
+    return data || [];
   };
 
-  const createCondition = async (conditionData: ToothCondition) => {
-    if (!user || !patientId) return;
+  const query = useQuery({
+    queryKey: ['tooth_conditions', patientId],
+    queryFn: fetcher,
+    enabled: !!patientId,
+    staleTime: 60_000,
+  });
 
-    try {
+  const createCondition = useMutation({
+    mutationFn: async (payload: Omit<ToothCondition, 'id'>) => {
+      if (!user) throw new Error('Usuario no autenticado');
       const { data, error } = await supabase
         .from('tooth_conditions')
-        .insert([{
-          patient_id: patientId,
-          tooth_number: conditionData.toothNumber,
-          surface: conditionData.surface,
-          condition: conditionData.condition,
-          status: conditionData.status,
-          notes: conditionData.notes,
-          date: conditionData.date
-        }])
+        .insert([{ ...payload, status: '1', created_by_user: user.id, created_date: new Date().toISOString() }])
         .select()
         .single();
-
       if (error) throw error;
-      
-      const formattedCondition = {
-        id: data.id,
-        toothNumber: data.tooth_number,
-        surface: data.surface,
-        condition: data.condition,
-        status: data.status,
-        notes: data.notes || '',
-        date: data.date
-      };
-      
-      setConditions(prev => [formattedCondition, ...prev]);
-      return formattedCondition;
-    } catch (error) {
-      console.error('Error creating tooth condition:', error);
-      throw error;
-    }
-  };
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tooth_conditions', patientId] }),
+  });
 
-  const updateCondition = async (id: string, updates: Partial<ToothCondition>) => {
-    try {
-      const dbUpdates: any = {};
-      if (updates.toothNumber) dbUpdates.tooth_number = updates.toothNumber;
-      if (updates.surface) dbUpdates.surface = updates.surface;
-      if (updates.condition) dbUpdates.condition = updates.condition;
-      if (updates.status) dbUpdates.status = updates.status;
-      if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
-      if (updates.date) dbUpdates.date = updates.date;
-
+  const updateCondition = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<ToothCondition> }) => {
       const { data, error } = await supabase
         .from('tooth_conditions')
-        .update(dbUpdates)
+        .update({ ...updates, updated_by_user: user?.id, updated_date: new Date().toISOString() })
         .eq('id', id)
         .select()
         .single();
-
       if (error) throw error;
-      
-      const formattedCondition = {
-        id: data.id,
-        toothNumber: data.tooth_number,
-        surface: data.surface,
-        condition: data.condition,
-        status: data.status,
-        notes: data.notes || '',
-        date: data.date
-      };
-      
-      setConditions(prev => 
-        prev.map(condition => 
-          condition.id === id ? { ...condition, ...formattedCondition } : condition
-        )
-      );
-      return formattedCondition;
-    } catch (error) {
-      console.error('Error updating tooth condition:', error);
-      throw error;
-    }
-  };
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tooth_conditions', patientId] }),
+  });
 
-  const deleteCondition = async (id: string) => {
-    try {
+  const deleteCondition = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('tooth_conditions')
-        .delete()
+        .update({ status: '0', updated_by_user: user?.id, updated_date: new Date().toISOString() })
         .eq('id', id);
-
       if (error) throw error;
-      
-      setConditions(prev => prev.filter(condition => condition.id !== id));
-    } catch (error) {
-      console.error('Error deleting tooth condition:', error);
-      throw error;
-    }
-  };
-
-  useEffect(() => {
-    fetchConditions();
-  }, [user, patientId]);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tooth_conditions', patientId] }),
+  });
 
   return {
-    conditions,
-    loading,
+    conditions: query.data || [],
+    loading: query.isLoading,
+    refetch: query.refetch,
     createCondition,
     updateCondition,
     deleteCondition,
-    refetch: fetchConditions
   };
 };

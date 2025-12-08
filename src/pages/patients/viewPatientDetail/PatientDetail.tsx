@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Edit, Calendar, FileText, Bluetooth as Tooth, Trash2 } from 'lucide-react';
-import { Odontogram } from './components/Odontogram';
+import { Odontogram } from './components/odontogram/Odontogram';
 import { PatientInfo } from './components/PatientInfo';
 import { TreatmentHistory } from './components/TreatmentHistory';
 import { EditPatientModal } from './components/EditPatientModal';

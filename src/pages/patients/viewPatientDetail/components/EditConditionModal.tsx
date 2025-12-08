@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
-import type { ToothCondition } from './Odontogram';
+import type { ToothCondition } from './odontogram/Odontogram';
 
 interface EditConditionModalProps {
   isOpen: boolean;

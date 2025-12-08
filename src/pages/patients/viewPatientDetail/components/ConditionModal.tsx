@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
-import type { ToothCondition } from './Odontogram';
+import type { ToothCondition } from './odontogram/Odontogram';
 
 interface ConditionModalProps {
   isOpen: boolean;
