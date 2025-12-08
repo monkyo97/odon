@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Edit, Calendar, FileText, Bluetooth as Tooth, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, Calendar, FileText, Bluetooth as Tooth, Trash2, Info, ChevronUp, ChevronDown, User } from 'lucide-react';
 import { Odontogram } from './components/odontogram/Odontogram';
 import { PatientInfo } from './components/PatientInfo';
 import { TreatmentHistory } from './components/TreatmentHistory';
@@ -18,6 +18,7 @@ export const PatientDetail: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showInfo, setShowInfo] = useState(true);
 
   const patient = patients.find(p => p.id === id);
 
@@ -82,7 +83,7 @@ export const PatientDetail: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Link 
+          <Link
             to="/patients"
             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
@@ -92,10 +93,20 @@ export const PatientDetail: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
             <p className="text-gray-600">{patient.age} años • Registrado: {new Date(patient.created_date).toLocaleDateString('es-ES')}</p>
           </div>
+
+          <button
+            onClick={() => setShowInfo(!showInfo)}
+            className={`ml-4 p-2 rounded-lg border transition-colors flex items-center gap-2 text-sm font-medium ${showInfo ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+              }`}
+            title={showInfo ? "Ocultar información" : "Ver información"}
+          >
+            <User className="h-4 w-4" />
+            {showInfo ? 'Ocultar Info' : 'Ver Info'}
+          </button>
         </div>
-        
+
         <div className="flex items-center space-x-3">
-          <button 
+          <button
             onClick={() => setIsEditModalOpen(true)}
             className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -113,24 +124,25 @@ export const PatientDetail: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-1">
-          <PatientInfo patient={patient} />
-        </div>
-        
-        <div className="lg:col-span-3">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="border-b border-gray-200">
-              <nav className="flex space-x-8 px-6">
+      <div className="flex flex-col lg:flex-row gap-6">
+        {showInfo && (
+          <div className="w-full lg:w-80 flex-shrink-0 transition-all duration-300">
+            <PatientInfo patient={patient} />
+          </div>
+        )}
+
+        <div className="flex-1 min-w-0">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-full flex flex-col">
+            <div className="border-b border-gray-200 flex-shrink-0">
+              <nav className="flex space-x-8 px-6 overflow-x-auto">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                    className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                      activeTab === tab.id
+                    className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === tab.id
                         ? 'border-blue-500 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <tab.icon className="h-4 w-4 mr-2" />
                     {tab.label}
@@ -138,8 +150,8 @@ export const PatientDetail: React.FC = () => {
                 ))}
               </nav>
             </div>
-            
-            <div className="p-6">
+
+            <div className="p-6 flex-1 overflow-y-auto">
               {activeTab === 'odontogram' && <Odontogram patientId={patient.id} />}
               {activeTab === 'history' && <TreatmentHistory patientId={patient.id} />}
               {activeTab === 'appointments' && <PatientAppointments patientId={patient.id} />}
