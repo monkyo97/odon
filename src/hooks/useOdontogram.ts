@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Odontogram, ToothCondition, ToothConditionType, Surface } from '../types/odontogram';
 import { useAuth } from '@contexts/AuthContext';
 
-export const useOdontogram = (patientId?: string) => {
+export const useOdontogram = (patientId?: string, activeOdontogramId?: string) => {
   const { user } = useAuth();
   const qc = useQueryClient();
 
@@ -51,11 +51,14 @@ export const useOdontogram = (patientId?: string) => {
 
   // Logic to determine which odontogram to show
   const latestOdontogram = odontograms?.[0];
+  const currentOdontogram = activeOdontogramId 
+    ? odontograms?.find(o => o.id === activeOdontogramId) || latestOdontogram
+    : latestOdontogram;
 
   const { data: conditions, isLoading: loadingConditions, refetch: refetchConditions } = useQuery({
-    queryKey: ['tooth_conditions', latestOdontogram?.id],
-    queryFn: () => fetchConditions(latestOdontogram!.id),
-    enabled: !!latestOdontogram?.id,
+    queryKey: ['tooth_conditions', currentOdontogram?.id],
+    queryFn: () => fetchConditions(currentOdontogram!.id),
+    enabled: !!currentOdontogram?.id,
   });
 
   // 3. Create New Odontogram (Version) with History Copy
@@ -187,7 +190,8 @@ export const useOdontogram = (patientId?: string) => {
 
   return {
     odontograms,
-    latestOdontogram,
+    latestOdontogram, // Keep for check if exists
+    currentOdontogram,
     conditions: conditions || [],
     loading: loadingOdontograms || loadingConditions,
     createOdontogram,

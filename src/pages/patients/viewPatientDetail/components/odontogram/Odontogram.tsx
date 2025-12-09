@@ -5,29 +5,44 @@ import { ToothSVG } from '@components/odontogram/ToothSVG';
 import { OdontogramSidebar } from './OdontogramSidebar';
 import { UPPER_FDI, LOWER_FDI } from '@constants/odontogram';
 import { ToothConditionType, Surface } from '@/types/odontogram';
-import { Loader2, Save, History, Plus, Menu, X } from 'lucide-react';
+import { Loader2, Save, History, Plus, Menu, X, ArrowLeft } from 'lucide-react';
 import { Notifications } from '@/components/Notifications';
+import { OdontogramHistoryPanel } from './OdontogramHistoryPanel';
 
 interface OdontogramProps {
   patientId: string;
 }
 
 export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
+  /* State */
+  const [selectedTool, setSelectedTool] = useState<ToothConditionType | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Controls Tools Sidebar
+  const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | undefined>(undefined);
+
+  /* Data Hook */
   const {
     latestOdontogram,
+    currentOdontogram,
+    odontograms,
     conditions,
     loading,
     saveCondition,
     createOdontogram
-  } = useOdontogram(patientId);
+  } = useOdontogram(patientId, selectedHistoryId);
 
-  const [selectedTool, setSelectedTool] = useState<ToothConditionType | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Derived state to check if we are viewing history (not the latest one)
+  const isHistoryMode = selectedHistoryId !== undefined && selectedHistoryId !== latestOdontogram?.id;
 
   const handleSurfaceClick = async (toothNumber: number, surface: Surface) => {
     if (!selectedTool) {
       Notifications.info('Selecciona una herramienta primero');
+      return;
+    }
+
+    if (isHistoryMode) {
+      Notifications.info('Estás en modo historial. Vuelve a la versión actual para editar.');
       return;
     }
 
@@ -74,24 +89,63 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
       {/* Header with Hamburger */}
       <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-xl border shadow-sm">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            title={isSidebarOpen ? "Cerrar herramientas" : "Abrir herramientas"}
-          >
-            {isSidebarOpen ? <X className="h-6 w-6 text-gray-600" /> : <Menu className="h-6 w-6 text-gray-600" />}
-          </button>
+
+          {!isHistoryPanelOpen && (
+            <button
+              onClick={() => {
+                if (isHistoryPanelOpen) setIsHistoryPanelOpen(false); // Close history if opening tools
+                setIsSidebarOpen(!isSidebarOpen);
+              }}
+              className={`p-2 rounded-lg transition-colors ${isSidebarOpen ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}
+              title={isSidebarOpen ? "Cerrar herramientas" : "Abrir herramientas"}
+            >
+              {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          )}
+          {isHistoryPanelOpen && <div className="w-10"></div>}
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Odontograma</h2>
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              Odontogram
+              {isHistoryMode && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full border border-orange-200">Modo Historial</span>}
+            </h2>
             <p className="text-sm text-gray-500">
-              {latestOdontogram
-                ? `${latestOdontogram.name} - ${new Date(latestOdontogram.date).toLocaleDateString()}`
+              {currentOdontogram
+                ? `${currentOdontogram.name} - ${new Date(currentOdontogram.date).toLocaleDateString()}`
                 : 'Sin odontograma registrado'}
             </p>
           </div>
         </div>
 
         <div className="flex gap-2">
+
+          {/* Volver button (only in history mode) */}
+          {isHistoryMode && (
+            <button
+              onClick={() => {
+                setSelectedHistoryId(undefined);
+                // Also maybe open tools automatically?
+              }}
+              className="flex items-center px-4 py-2 bg-white border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver a Actual
+            </button>
+          )}
+
+          {/* Historial Toggle Button */}
+          {latestOdontogram && (
+            <button
+              onClick={() => {
+                if (isSidebarOpen) setIsSidebarOpen(false); // Close tools
+                setIsHistoryPanelOpen(!isHistoryPanelOpen);
+              }}
+              className={`flex items-center px-4 py-2 border rounded-lg transition ${isHistoryPanelOpen ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            >
+              <History className="h-4 w-4 mr-2" />
+              Historial
+            </button>
+          )}
+
           {!latestOdontogram && (
             <button
               onClick={handleCreateVersion}
@@ -102,13 +156,15 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
               Crear Inicial
             </button>
           )}
-          {latestOdontogram && (
+
+          {/* Create New Version (Only if not in history mode AND history panel is closed) */}
+          {latestOdontogram && !isHistoryMode && !isHistoryPanelOpen && (
             <button
               onClick={handleCreateVersion}
               disabled={saving}
               className="flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
             >
-              <History className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 mr-2" />
               Nueva Versión
             </button>
           )}
@@ -149,25 +205,42 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
         </div>
 
         {/* Collapsible Sidebar / Toolbox */}
+        {/* Collapsible Sidebar / Toolbox OR History Panel */}
         <div
           className={`
             absolute top-0 right-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-20
-            ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}
+            ${(isSidebarOpen || isHistoryPanelOpen) ? 'translate-x-0' : 'translate-x-full'}
             lg:relative lg:transform-none lg:w-80 lg:shadow-none lg:bg-transparent
-            ${isSidebarOpen ? 'lg:block' : 'lg:hidden'}
+            ${(isSidebarOpen || isHistoryPanelOpen) ? 'lg:block' : 'lg:hidden'}
           `}
         >
-          <OdontogramSidebar
-            selectedTool={selectedTool}
-            onSelectTool={setSelectedTool}
-          />
+          {isSidebarOpen && (
+            <OdontogramSidebar
+              selectedTool={selectedTool}
+              onSelectTool={setSelectedTool}
+            />
+          )}
+          {isHistoryPanelOpen && (
+            <OdontogramHistoryPanel
+              odontograms={odontograms || []}
+              activeId={currentOdontogram?.id}
+              onSelectVersion={(id) => {
+                setSelectedHistoryId(id);
+                // Optional: Close panel on select? Maybe keep open for browsing.
+              }}
+              onClose={() => setIsHistoryPanelOpen(false)}
+            />
+          )}
         </div>
 
         {/* Overlay for mobile when sidebar is open */}
-        {isSidebarOpen && (
+        {(isSidebarOpen || isHistoryPanelOpen) && (
           <div
             className="absolute inset-0 bg-black/20 z-10 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
+            onClick={() => {
+              setIsSidebarOpen(false);
+              setIsHistoryPanelOpen(false);
+            }}
           />
         )}
       </div>
