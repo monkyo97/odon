@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useOdontogram } from '@/hooks/useOdontogram';
 import { ToothSVG } from '@/components/odontogram/ToothSVG';
 import { OdontogramSidebar } from './OdontogramSidebar';
-import { UPPER_FDI, LOWER_FDI } from '@/constants/odontogram';
+import { UPPER_FDI, LOWER_FDI, UPPER_DECIDUOUS, LOWER_DECIDUOUS, TOOLBAR_TOOLS } from '@/constants/odontogram';
 import { ToothConditionType, Surface } from '@/types/odontogram';
 import { Loader2, History, Plus, Menu, X, ArrowLeft, CheckCircle, FileText } from 'lucide-react';
 import { Notifications } from '@/components/Notifications';
@@ -99,6 +99,18 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
       return;
     }
 
+    // Check if tooth is blocked (Missing/Extraction)
+    const toothConditions = conditions.filter(c => c.tooth_number === toothNumber);
+    const isBlocked = toothConditions.some(c => c.condition_type === 'missing' || c.condition_type === 'extraction_planned');
+
+    // Allow if tool is 'healthy' (to fix) or 'missing'/'extraction' (to toggle/update)
+    const isControlTool = selectedTool === 'healthy' || selectedTool === 'missing' || selectedTool === 'extraction_planned';
+
+    if (isBlocked && !isControlTool) {
+      Notifications.warning('El diente está ausente o planificado para extracción. No se pueden agregar condiciones superficiales.');
+      return;
+    }
+
     // Handle Range Tools
     const isRangeTool = ['orthodontics', 'bridge', 'prosthesis'].includes(selectedTool);
 
@@ -121,8 +133,8 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
             await saveCondition.mutateAsync({
               odontogramId: latestOdontogram.id,
               toothNumber: existingRange.tooth_number,
-              surface: 'whole',
-              condition: 'healthy', // Assuming 'healthy' clears the condition based on our logic or convention
+              surface: 'whole', // Usually ranges are stored on 'whole' or specific surface?
+              condition: 'healthy',
               cost: 0
             });
             Notifications.success('Rango eliminado');
@@ -137,11 +149,19 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
 
     if (isRangeTool) {
       if (selectionStart === null) {
+        if (isBlocked) {
+          Notifications.warning('No se puede iniciar un rango en un diente ausente.');
+          return;
+        }
         setSelectionStart(toothNumber);
         Notifications.info(`Selecciona el diente final para ${selectedTool === 'orthodontics' ? 'Ortodoncia' : selectedTool === 'bridge' ? 'Puente' : 'Prótesis'}`);
         return;
       } else {
         // Complete Range
+        if (isBlocked) {
+          Notifications.warning('No se puede finalizar un rango en un diente ausente.');
+          return;
+        }
         const start = Math.min(selectionStart, toothNumber);
         const end = Math.max(selectionStart, toothNumber);
 
@@ -167,6 +187,12 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
 
     // Normal Single Tooth Condition
     try {
+      // If setting a WHOLE condition (Missing, Crown, Extraction), we might want to clear previous SURFACES?
+      // User requested: "Borra cualquier superficie previa (opcional)"
+      // Let's effectively just Add. 
+      // But if user sets 'missing', existing surface paintings remain in DB but are visually hidden by the X.
+      // This is non-destructive and safer.
+
       await saveCondition.mutateAsync({
         odontogramId: latestOdontogram.id,
         toothNumber,
@@ -221,20 +247,54 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
 
   const handleExportPDF = async () => {
     if (!currentOdontogram) return;
-    try {
-      await generateOdontogramPDF({
-        clinicName: 'Clínica Dental DevMC',
-        patientName,
-        patientEmail,
-        patientPhone,
-        odontogram: currentOdontogram,
-        conditions,
-        elementIdToCapture: 'odontogram-visual-area'
-      });
-      Notifications.success('PDF generado correctamente');
-    } catch (error) {
-      console.error(error);
-      Notifications.error('Error al generar PDF');
+
+    // If in Review Mode, we need to show the visual temporarily to capture it
+    // Or we render it off-screen? 
+    // Current strategy: If in review mode, warn or auto-switch?
+    // Auto-switch is tricky with async state.
+    // Let's try: render the visual div always but hide it with position absolute/z-index if in review mode?
+    // No, that messes up the UI.
+
+    // Best user experience:
+    const wasReviewMode = isReviewMode;
+    if (wasReviewMode) {
+      setIsReviewMode(false);
+      // Wait for render
+      setTimeout(async () => {
+        try {
+          await generateOdontogramPDF({
+            clinicName: 'Clínica Dental DevMC',
+            patientName,
+            patientEmail,
+            patientPhone,
+            odontogram: currentOdontogram,
+            conditions,
+            elementIdToCapture: 'odontogram-visual-area'
+          });
+          Notifications.success('PDF generado correctamente');
+        } catch (error) {
+          console.error(error);
+          Notifications.error('Error al generar PDF');
+        } finally {
+          setIsReviewMode(true);
+        }
+      }, 500); // 500ms delay to ensure render
+    } else {
+      try {
+        await generateOdontogramPDF({
+          clinicName: 'Clínica Dental DevMC',
+          patientName,
+          patientEmail,
+          patientPhone,
+          odontogram: currentOdontogram,
+          conditions,
+          elementIdToCapture: 'odontogram-visual-area'
+        });
+        Notifications.success('PDF generado correctamente');
+      } catch (error) {
+        console.error(error);
+        Notifications.error('Error al generar PDF');
+      }
     }
   };
 
@@ -369,8 +429,9 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
                   <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
                     <tr>
                       <th className="px-4 py-3">Fecha</th>
-                      <th className="px-4 py-3">Revisión</th>
+                      {/* <th className="px-4 py-3">Revisión</th> Removed as requested to simplify */}
                       <th className="px-4 py-3">Diente / Rango</th>
+                      <th className="px-4 py-3">Superficie</th>
                       <th className="px-4 py-3">Diagnóstico</th>
                       <th className="px-4 py-3">Importe</th>
                       <th className="px-4 py-3">Acciones</th>
@@ -382,9 +443,6 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
                         <td className="px-4 py-3">
                           {c.created_date ? new Date(c.created_date).toLocaleDateString() : '-'}
                         </td>
-                        <td className="px-4 py-3">
-                          {currentOdontogram?.name || '-'}
-                        </td>
                         <td className="px-4 py-3 font-medium">
                           {c.range_end_tooth
                             ? `${c.tooth_number} - ${c.range_end_tooth}`
@@ -392,12 +450,23 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
                           }
                         </td>
                         <td className="px-4 py-3">
+                          {/* Map Surface to Code */}
+                          {c.surface === 'occlusal' ? 'O' :
+                            c.surface === 'incisal' ? 'I' :
+                              c.surface === 'mesial' ? 'M' :
+                                c.surface === 'distal' ? 'D' :
+                                  c.surface === 'vestibular' ? 'V' :
+                                    c.surface === 'lingual' ? 'L' :
+                                      c.surface === 'palatal' ? 'P' :
+                                        c.surface === 'whole' ? '-' : c.surface}
+                        </td>
+                        <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            {c.condition_type}
+                            {/* Translate Condition using TOOLBAR_TOOLS */}
+                            {TOOLBAR_TOOLS.find(t => t.id === c.condition_type)?.label || c.condition_type}
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          {/* Editable Cost Placeholder */}
                           <input
                             type="number"
                             className="w-20 p-1 border rounded text-right"
@@ -442,7 +511,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
           ) : (
             /* Teeth Grid */
             <div id="odontogram-visual-area" className="flex-1 flex flex-col justify-center items-center space-y-8 min-w-[800px] overflow-x-auto p-4 bg-white">
-              {/* Upper Arch */}
+              {/* Upper Arch (Permanent) */}
               <div className="flex gap-1 justify-center">
                 {UPPER_FDI.map((number) => (
                   <ToothSVG
@@ -456,9 +525,37 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
                 ))}
               </div>
 
+              {/* Upper Arch (Deciduous) */}
+              <div className="flex gap-1 justify-center scale-90">
+                {UPPER_DECIDUOUS.map((number) => (
+                  <ToothSVG
+                    key={number}
+                    number={number}
+                    conditions={conditions.filter(c => c.tooth_number === number)}
+                    onSurfaceClick={(surface) => handleSurfaceClick(number, surface)}
+                    rangeInfo={getRangeInfo(number)}
+                    isSelectionStart={selectionStart === number}
+                  />
+                ))}
+              </div>
+
               <div className="w-full border-t border-dashed border-gray-300"></div>
 
-              {/* Lower Arch */}
+              {/* Lower Arch (Deciduous) */}
+              <div className="flex gap-1 justify-center scale-90">
+                {LOWER_DECIDUOUS.map((number) => (
+                  <ToothSVG
+                    key={number}
+                    number={number}
+                    conditions={conditions.filter(c => c.tooth_number === number)}
+                    onSurfaceClick={(surface) => handleSurfaceClick(number, surface)}
+                    rangeInfo={getRangeInfo(number)}
+                    isSelectionStart={selectionStart === number}
+                  />
+                ))}
+              </div>
+
+              {/* Lower Arch (Permanent) */}
               <div className="flex gap-1 justify-center">
                 {LOWER_FDI.map((number) => (
                   <ToothSVG
