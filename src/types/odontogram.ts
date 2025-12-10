@@ -11,6 +11,8 @@ export type ToothConditionType =
   | 'fracture' 
   | 'sealant' 
   | 'prosthesis'
+  | 'orthodontics'
+  | 'bridge'
   | 'healthy';
 
 export type ConditionStatus = 'planned' | 'in_progress' | 'completed' | 'existing';
@@ -19,10 +21,12 @@ export interface ToothCondition {
   id?: string;
   odontogram_id: string;
   tooth_number: number;
+  range_end_tooth?: number; // For ranges (Ortho, Bridge, Prosthesis)
   surface: Surface;
   condition_type: ToothConditionType;
   status: ConditionStatus;
   notes?: string;
+  cost?: number; // Cost for list view
   created_by_user?: string;
   created_date?: string;
   created_by_ip?: string;

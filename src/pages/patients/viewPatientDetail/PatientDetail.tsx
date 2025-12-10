@@ -140,8 +140,8 @@ export const PatientDetail: React.FC = () => {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as typeof activeTab)}
                     className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                       }`}
                   >
                     <tab.icon className="h-4 w-4 mr-2" />
@@ -152,7 +152,14 @@ export const PatientDetail: React.FC = () => {
             </div>
 
             <div className="p-6 flex-1 overflow-y-auto">
-              {activeTab === 'odontogram' && <Odontogram patientId={patient.id} />}
+              {activeTab === 'odontogram' && (
+                <Odontogram
+                  patientId={patient.id}
+                  patientName={patient.name}
+                  patientEmail={patient.email}
+                  patientPhone={patient.phone}
+                />
+              )}
               {activeTab === 'history' && <TreatmentHistory patientId={patient.id} />}
               {activeTab === 'appointments' && <PatientAppointments patientId={patient.id} />}
             </div>

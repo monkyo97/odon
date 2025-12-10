@@ -1,25 +1,34 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { useOdontogram } from '@hooks/useOdontogram';
-import { ToothSVG } from '@components/odontogram/ToothSVG';
+import { useOdontogram } from '@/hooks/useOdontogram';
+import { ToothSVG } from '@/components/odontogram/ToothSVG';
 import { OdontogramSidebar } from './OdontogramSidebar';
-import { UPPER_FDI, LOWER_FDI } from '@constants/odontogram';
+import { UPPER_FDI, LOWER_FDI } from '@/constants/odontogram';
 import { ToothConditionType, Surface } from '@/types/odontogram';
-import { Loader2, Save, History, Plus, Menu, X, ArrowLeft } from 'lucide-react';
+import { Loader2, History, Plus, Menu, X, ArrowLeft, CheckCircle, FileText } from 'lucide-react';
 import { Notifications } from '@/components/Notifications';
 import { OdontogramHistoryPanel } from './OdontogramHistoryPanel';
+import { generateOdontogramPDF } from '@/utils/pdfGenerator';
+import { useTreatments } from '@/hooks/useTreatments';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface OdontogramProps {
   patientId: string;
+  patientName: string;
+  patientEmail?: string;
+  patientPhone?: string;
 }
 
-export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
+export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, patientEmail, patientPhone }) => {
   /* State */
   const [selectedTool, setSelectedTool] = useState<ToothConditionType | null>(null);
   const [saving, setSaving] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Controls Tools Sidebar
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | undefined>(undefined);
+
+  // Range Selection State
+  const [selectionStart, setSelectionStart] = useState<number | null>(null);
+  const [isReviewMode, setIsReviewMode] = useState(false);
 
   /* Data Hook */
   const {
@@ -32,8 +41,47 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
     createOdontogram
   } = useOdontogram(patientId, selectedHistoryId);
 
+  const { createTreatment } = useTreatments(patientId);
+  const { user } = useAuth();
+
   // Derived state to check if we are viewing history (not the latest one)
   const isHistoryMode = selectedHistoryId !== undefined && selectedHistoryId !== latestOdontogram?.id;
+
+  const handleConvertToTreatment = async (condition: any) => {
+    if (!user) return;
+    try {
+      await createTreatment({
+        patientId,
+        toothNumber: condition.range_end_tooth
+          ? `${condition.tooth_number}-${condition.range_end_tooth}`
+          : condition.tooth_number.toString(),
+        procedure: condition.condition_type,
+        surface: condition.surface,
+        dentist: user.user_metadata?.name || 'Dr. Usuario',
+        notes: `Generado desde Odontograma. ${condition.notes || ''}`,
+        cost: condition.cost || 0,
+        date: new Date().toISOString(),
+        status: 'completed'
+      });
+
+      // Update condition status to completed?
+      await saveCondition.mutateAsync({
+        odontogramId: currentOdontogram!.id,
+        toothNumber: condition.tooth_number,
+        surface: condition.surface,
+        condition: condition.condition_type,
+        rangeEndTooth: condition.range_end_tooth,
+        notes: condition.notes,
+        cost: condition.cost,
+        // status: 'completed' // If supported by backend/hook
+      });
+
+      Notifications.success('Tratamiento realizado y registrado en historial');
+    } catch (error) {
+      console.error(error);
+      Notifications.error('Error al convertir a tratamiento');
+    }
+  };
 
   const handleSurfaceClick = async (toothNumber: number, surface: Surface) => {
     if (!selectedTool) {
@@ -51,12 +99,80 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
       return;
     }
 
+    // Handle Range Tools
+    const isRangeTool = ['orthodontics', 'bridge', 'prosthesis'].includes(selectedTool);
+
+    // Range Deletion Logic: Only check if NOT currently selecting a range
+    if (selectionStart === null) {
+      // Find if this tooth is part of an existing range
+      const existingRange = conditions.find(c => {
+        const isRangeType = ['orthodontics', 'bridge', 'prosthesis'].includes(c.condition_type);
+        if (!isRangeType || !c.range_end_tooth) return false;
+        const start = Math.min(c.tooth_number, c.range_end_tooth);
+        const end = Math.max(c.tooth_number, c.range_end_tooth);
+        return toothNumber >= start && toothNumber <= end;
+      });
+
+      if (existingRange) {
+        if (window.confirm(`¿Eliminar ${existingRange.condition_type} del diente ${existingRange.tooth_number} al ${existingRange.range_end_tooth}?`)) {
+          try {
+            // We use saveCondition to basically "overwrite" or if we had a delete function.
+            // We will assume passing 'healthy' condition to the START tooth of the range
+            await saveCondition.mutateAsync({
+              odontogramId: latestOdontogram.id,
+              toothNumber: existingRange.tooth_number,
+              surface: 'whole',
+              condition: 'healthy', // Assuming 'healthy' clears the condition based on our logic or convention
+              cost: 0
+            });
+            Notifications.success('Rango eliminado');
+          } catch (error) {
+            console.error(error);
+            Notifications.error('Error al eliminar rango');
+          }
+        }
+        return; // Intercept click so we don't add a new condition on top
+      }
+    }
+
+    if (isRangeTool) {
+      if (selectionStart === null) {
+        setSelectionStart(toothNumber);
+        Notifications.info(`Selecciona el diente final para ${selectedTool === 'orthodontics' ? 'Ortodoncia' : selectedTool === 'bridge' ? 'Puente' : 'Prótesis'}`);
+        return;
+      } else {
+        // Complete Range
+        const start = Math.min(selectionStart, toothNumber);
+        const end = Math.max(selectionStart, toothNumber);
+
+        try {
+          await saveCondition.mutateAsync({
+            odontogramId: latestOdontogram.id,
+            toothNumber: start,
+            surface: 'whole', // Ranges apply to whole range usually
+            condition: selectedTool,
+            rangeEndTooth: end,
+            cost: 0 // Default cost, editable in list
+          });
+          setSelectionStart(null);
+          Notifications.success('Rango registrado');
+        } catch (error) {
+          console.error(error);
+          Notifications.error('Error al guardar rango');
+          setSelectionStart(null);
+        }
+        return;
+      }
+    }
+
+    // Normal Single Tooth Condition
     try {
       await saveCondition.mutateAsync({
         odontogramId: latestOdontogram.id,
         toothNumber,
         surface,
         condition: selectedTool,
+        cost: 0
       });
     } catch (error) {
       console.error(error);
@@ -73,6 +189,52 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
       Notifications.error('Error al crear versión');
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Helper to determine range properties for a tooth
+  const getRangeInfo = (toothNumber: number) => {
+    // Find any condition that covers this tooth in a range
+    const rangeCondition = conditions.find(c => {
+      const isRange = ['orthodontics', 'bridge', 'prosthesis'].includes(c.condition_type);
+      if (!isRange || !c.range_end_tooth) return false;
+      const start = Math.min(c.tooth_number, c.range_end_tooth);
+      const end = Math.max(c.tooth_number, c.range_end_tooth);
+      return toothNumber >= start && toothNumber <= end;
+    });
+
+    if (!rangeCondition || !rangeCondition.range_end_tooth) return null;
+
+    const start = Math.min(rangeCondition.tooth_number, rangeCondition.range_end_tooth);
+    const end = Math.max(rangeCondition.tooth_number, rangeCondition.range_end_tooth);
+
+    let position: 'start' | 'middle' | 'end' | 'single' = 'middle';
+    if (start === end) position = 'single';
+    else if (toothNumber === start) position = 'start';
+    else if (toothNumber === end) position = 'end';
+
+    return {
+      type: rangeCondition.condition_type as 'orthodontics' | 'bridge' | 'prosthesis',
+      position
+    };
+  };
+
+  const handleExportPDF = async () => {
+    if (!currentOdontogram) return;
+    try {
+      await generateOdontogramPDF({
+        clinicName: 'Clínica Dental DevMC',
+        patientName,
+        patientEmail,
+        patientPhone,
+        odontogram: currentOdontogram,
+        conditions,
+        elementIdToCapture: 'odontogram-visual-area'
+      });
+      Notifications.success('PDF generado correctamente');
+    } catch (error) {
+      console.error(error);
+      Notifications.error('Error al generar PDF');
     }
   };
 
@@ -104,10 +266,27 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
           )}
           {isHistoryPanelOpen && <div className="w-10"></div>}
           <div>
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              Odontogram
-              {isHistoryMode && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full border border-orange-200">Modo Historial</span>}
-            </h2>
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                Odontogram
+                {isHistoryMode && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full border border-orange-200">Modo Historial</span>}
+              </h2>
+              {/* Review Mode Toggle */}
+              <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+                <button
+                  className={`text-xs font-medium px-2 py-1 rounded cursor-pointer transition ${!isReviewMode ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                  onClick={() => setIsReviewMode(false)}
+                >
+                  Visualizar
+                </button>
+                <button
+                  className={`text-xs font-medium px-2 py-1 rounded cursor-pointer transition ${isReviewMode ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                  onClick={() => setIsReviewMode(true)}
+                >
+                  Revisar
+                </button>
+              </div>
+            </div>
             <p className="text-sm text-gray-500">
               {currentOdontogram
                 ? `${currentOdontogram.name} - ${new Date(currentOdontogram.date).toLocaleDateString()}`
@@ -123,7 +302,6 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
             <button
               onClick={() => {
                 setSelectedHistoryId(undefined);
-                // Also maybe open tools automatically?
               }}
               className="flex items-center px-4 py-2 bg-white border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition"
             >
@@ -174,45 +352,137 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
       <div className="flex flex-1 relative overflow-hidden gap-6">
         {/* Main Odontogram Area */}
         <div className="flex-1 bg-white border rounded-xl p-6 overflow-y-auto shadow-sm flex flex-col">
-          {/* Teeth Grid */}
-          <div className="flex-1 flex flex-col justify-center items-center space-y-8 min-w-[800px] overflow-x-auto">
-            {/* Upper Arch */}
-            <div className="flex gap-1 justify-center">
-              {UPPER_FDI.map((number) => (
-                <ToothSVG
-                  key={number}
-                  number={number}
-                  conditions={conditions.filter(c => c.tooth_number === number)}
-                  onSurfaceClick={(surface) => handleSurfaceClick(number, surface)}
-                />
-              ))}
-            </div>
 
-            <div className="w-full border-t border-dashed border-gray-300"></div>
-
-            {/* Lower Arch */}
-            <div className="flex gap-1 justify-center">
-              {LOWER_FDI.map((number) => (
-                <ToothSVG
-                  key={number}
-                  number={number}
-                  conditions={conditions.filter(c => c.tooth_number === number)}
-                  onSurfaceClick={(surface) => handleSurfaceClick(number, surface)}
-                />
-              ))}
+          {isReviewMode ? (
+            <div className="w-full h-full flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-800">Detalle de Diagnósticos</h3>
+                <button
+                  onClick={handleExportPDF}
+                  className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" /> Exportar PDF
+                </button>
+              </div>
+              <div className="flex-1 overflow-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="px-4 py-3">Fecha</th>
+                      <th className="px-4 py-3">Revisión</th>
+                      <th className="px-4 py-3">Diente / Rango</th>
+                      <th className="px-4 py-3">Diagnóstico</th>
+                      <th className="px-4 py-3">Importe</th>
+                      <th className="px-4 py-3">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {conditions.map((c) => (
+                      <tr key={c.id} className="bg-white border-b hover:bg-gray-50">
+                        <td className="px-4 py-3">
+                          {c.created_date ? new Date(c.created_date).toLocaleDateString() : '-'}
+                        </td>
+                        <td className="px-4 py-3">
+                          {currentOdontogram?.name || '-'}
+                        </td>
+                        <td className="px-4 py-3 font-medium">
+                          {c.range_end_tooth
+                            ? `${c.tooth_number} - ${c.range_end_tooth}`
+                            : c.tooth_number
+                          }
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            {c.condition_type}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {/* Editable Cost Placeholder */}
+                          <input
+                            type="number"
+                            className="w-20 p-1 border rounded text-right"
+                            defaultValue={c.cost || 0}
+                            onBlur={(e) => {
+                              const val = parseFloat(e.target.value);
+                              saveCondition.mutate({
+                                odontogramId: currentOdontogram!.id,
+                                toothNumber: c.tooth_number,
+                                surface: c.surface,
+                                condition: c.condition_type,
+                                rangeEndTooth: c.range_end_tooth,
+                                notes: c.notes,
+                                cost: val
+                              });
+                            }}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => handleConvertToTreatment(c)}
+                            className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-xs font-medium"
+                            title="Pasar a Tratamiento"
+                          >
+                            <CheckCircle className="h-3 w-3" />
+                            Realizar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {conditions.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="text-center py-8 text-gray-500">
+                          No hay diagnósticos registrados.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Teeth Grid */
+            <div id="odontogram-visual-area" className="flex-1 flex flex-col justify-center items-center space-y-8 min-w-[800px] overflow-x-auto p-4 bg-white">
+              {/* Upper Arch */}
+              <div className="flex gap-1 justify-center">
+                {UPPER_FDI.map((number) => (
+                  <ToothSVG
+                    key={number}
+                    number={number}
+                    conditions={conditions.filter(c => c.tooth_number === number)}
+                    onSurfaceClick={(surface) => handleSurfaceClick(number, surface)}
+                    rangeInfo={getRangeInfo(number)}
+                    isSelectionStart={selectionStart === number}
+                  />
+                ))}
+              </div>
+
+              <div className="w-full border-t border-dashed border-gray-300"></div>
+
+              {/* Lower Arch */}
+              <div className="flex gap-1 justify-center">
+                {LOWER_FDI.map((number) => (
+                  <ToothSVG
+                    key={number}
+                    number={number}
+                    conditions={conditions.filter(c => c.tooth_number === number)}
+                    onSurfaceClick={(surface) => handleSurfaceClick(number, surface)}
+                    rangeInfo={getRangeInfo(number)}
+                    isSelectionStart={selectionStart === number}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Collapsible Sidebar / Toolbox */}
         {/* Collapsible Sidebar / Toolbox OR History Panel */}
         <div
           className={`
-            absolute top-0 right-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-20
-            ${(isSidebarOpen || isHistoryPanelOpen) ? 'translate-x-0' : 'translate-x-full'}
-            lg:relative lg:transform-none lg:w-80 lg:shadow-none lg:bg-transparent
-            ${(isSidebarOpen || isHistoryPanelOpen) ? 'lg:block' : 'lg:hidden'}
-          `}
+              absolute top-0 right-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-20
+              ${(isSidebarOpen || isHistoryPanelOpen) ? 'translate-x-0' : 'translate-x-full'}
+              lg:relative lg:transform-none lg:w-80 lg:shadow-none lg:bg-transparent
+              ${(isSidebarOpen || isHistoryPanelOpen) ? 'lg:block' : 'lg:hidden'}
+            `}
         >
           {isSidebarOpen && (
             <OdontogramSidebar
@@ -226,7 +496,6 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId }) => {
               activeId={currentOdontogram?.id}
               onSelectVersion={(id) => {
                 setSelectedHistoryId(id);
-                // Optional: Close panel on select? Maybe keep open for browsing.
               }}
               onClose={() => setIsHistoryPanelOpen(false)}
             />

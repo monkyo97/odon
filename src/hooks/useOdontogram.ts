@@ -125,26 +125,30 @@ export const useOdontogram = (patientId?: string, activeOdontogramId?: string) =
     mutationFn: async (payload: { 
       odontogramId: string; 
       toothNumber: number; 
+      rangeEndTooth?: number; // Needed for ranges
       surface: Surface; 
       condition: ToothConditionType;
       notes?: string;
+      cost?: number; // Needed for list view
     }) => {
       if (!user) throw new Error('No user');
       const ip = await getIp();
 
       // First, try to find existing condition on this surface
+      // For ranges, we assume surface is 'whole' usually, but let's keep generic
       const { data: existing } = await supabase
         .from('tooth_conditions')
         .select('id')
         .eq('odontogram_id', payload.odontogramId)
         .eq('tooth_number', payload.toothNumber)
         .eq('surface', payload.surface)
+        // If it's a range start, we might want to check if there is an existing range? 
+        // For simplicity, we overwrite if same tooth/surface.
         .single();
 
       if (existing) {
         // Update or Delete
         if (payload.condition === 'healthy') {
-            // If setting to healthy, delete the condition record
             const { error } = await supabase.from('tooth_conditions').delete().eq('id', existing.id);
             if (error) throw error;
         } else {
@@ -152,7 +156,9 @@ export const useOdontogram = (patientId?: string, activeOdontogramId?: string) =
             .from('tooth_conditions')
             .update({ 
                 condition_type: payload.condition,
+                range_end_tooth: payload.rangeEndTooth, // Add this
                 notes: payload.notes,
+                cost: payload.cost, // Add this
                 updated_by_user: user.id,
                 updated_by_ip: ip,
                 updated_date: new Date().toISOString()
@@ -168,13 +174,15 @@ export const useOdontogram = (patientId?: string, activeOdontogramId?: string) =
             .insert([{
                 odontogram_id: payload.odontogramId,
                 tooth_number: payload.toothNumber,
+                range_end_tooth: payload.rangeEndTooth, // Add this
                 surface: payload.surface,
                 condition_type: payload.condition,
-                status: 'planned', // Default status for new entries
+                status: 'planned', 
                 notes: payload.notes,
+                cost: payload.cost, // Add this
                 created_by_user: user.id,
                 created_by_ip: ip,
-                created_date: new Date().toISOString(), // Explicitly set created_date
+                created_date: new Date().toISOString(),
                 updated_by_user: user.id,
                 updated_by_ip: ip,
                 updated_date: new Date().toISOString()

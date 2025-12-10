@@ -1,26 +1,41 @@
 import React from 'react';
-import { Surface, ToothCondition, ToothConditionType } from '../../types/odontogram';
-import { CONDITION_COLORS } from '../../constants/odontogram';
+import { Surface, ToothCondition } from '@/types/odontogram';
+import { CONDITION_COLORS } from '@/constants/odontogram';
 
 interface ToothSVGProps {
     number: number;
     conditions: ToothCondition[];
     onSurfaceClick: (surface: Surface) => void;
     selectedSurface?: Surface | null;
+    rangeInfo?: {
+        type: 'orthodontics' | 'bridge' | 'prosthesis';
+        position: 'start' | 'middle' | 'end' | 'single';
+    } | null;
+    isSelectionStart?: boolean;
 }
 
-export const ToothSVG: React.FC<ToothSVGProps> = ({ number, conditions, onSurfaceClick, selectedSurface }) => {
+export const ToothSVG: React.FC<ToothSVGProps> = ({ number, conditions, onSurfaceClick, selectedSurface, rangeInfo, isSelectionStart }) => {
     const isUpper = number < 30; // 11-28 are upper
 
     // Helper to get color for a surface
     const getSurfaceColor = (surface: Surface) => {
-        // Check for "whole" tooth conditions first (e.g., missing, crown)
-        const wholeCondition = conditions.find(c => c.surface === 'whole');
-        if (wholeCondition) return CONDITION_COLORS[wholeCondition.condition_type];
-
-        // Check specific surface condition
+        // Check for "whole" tooth conditions first (e.g., missing, crown) needs to be handled visually differently usually, 
+        // but here we might flag it.
+        // Actually, if a whole tooth condition exists, typically specific surfaces might technically still have color, 
+        // but often the whole tooth is overlaid.
+        // We will check specific surface condition first.
         const condition = conditions.find(c => c.surface === surface);
-        return condition ? CONDITION_COLORS[condition.condition_type] : '#FFFFFF'; // Default white
+        if (condition) return CONDITION_COLORS[condition.condition_type as keyof typeof CONDITION_COLORS] || '#FFFFFF';
+
+        // Additional check if we want "whole" to override
+        const wholeCondition = conditions.find(c => c.surface === 'whole');
+        if (wholeCondition) {
+            // Maybe return a dimmed version or handle in overlay?
+            // For now, keep surface specific logic pure.
+            return '#FFFFFF';
+        }
+
+        return '#FFFFFF'; // Default white
     };
 
     const getStrokeColor = (surface: Surface) => {
@@ -83,9 +98,49 @@ export const ToothSVG: React.FC<ToothSVGProps> = ({ number, conditions, onSurfac
     const endo = conditions.some(c => c.condition_type === 'endodontics');
     const crown = conditions.some(c => c.condition_type === 'crown');
 
+    // Range Logic
+    const renderRangeOverlay = () => {
+        if (!rangeInfo) return null;
+        const { type, position } = rangeInfo;
+
+        let color = '#3B82F6'; // Default bridge blue
+        if (type === 'orthodontics') color = '#10B981'; // Ortho green
+        if (type === 'prosthesis') color = '#F59E0B'; // Prosthesis Gold
+
+        const yPos = SIZE / 2;
+        const strokeWidth = 3;
+
+        return (
+            <g className="pointer-events-none">
+                {/* Wires/Lines */}
+                {(position === 'start' || position === 'middle') && (
+                    <line x1={CENTER} y1={yPos} x2={SIZE} y2={yPos} stroke={color} strokeWidth={strokeWidth} />
+                )}
+                {(position === 'end' || position === 'middle') && (
+                    <line x1={0} y1={yPos} x2={CENTER} y2={yPos} stroke={color} strokeWidth={strokeWidth} />
+                )}
+
+                {/* Brackets or Markers (for Ortho mostly) */}
+                {type === 'orthodontics' && (
+                    <rect x={CENTER - 4} y={CENTER - 4} width={8} height={8} fill={color} />
+                )}
+
+                {/* Bridge Abutment Indicators */}
+                {type === 'bridge' && (position === 'start' || position === 'end') && (
+                    <circle cx={CENTER} cy={CENTER} r={4} fill={color} />
+                )}
+            </g>
+        );
+    };
+
     return (
         <div className="relative flex flex-col items-center m-1 group">
             <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="overflow-visible">
+                {/* Visual feedback for start of selection */}
+                {isSelectionStart && (
+                    <circle cx={CENTER} cy={CENTER} r={SIZE / 2 + 4} fill="none" stroke="#EF4444" strokeWidth="2" strokeDasharray="4 2" className="animate-pulse" />
+                )}
+
                 {renderPath(topD, topSurface, isUpper ? 'Vestibular' : 'Lingual')}
                 {renderPath(rightD, rightSurface, isRightQuadrant ? 'Mesial' : 'Distal')}
                 {renderPath(bottomD, bottomSurface, isUpper ? 'Lingual' : 'Vestibular')}
@@ -94,22 +149,24 @@ export const ToothSVG: React.FC<ToothSVGProps> = ({ number, conditions, onSurfac
 
                 {/* Overlays for Whole Tooth Conditions */}
                 {missing && (
-                    <g>
+                    <g className="pointer-events-none">
                         <line x1="0" y1="0" x2={SIZE} y2={SIZE} stroke="black" strokeWidth="3" />
                         <line x1={SIZE} y1="0" x2="0" y2={SIZE} stroke="black" strokeWidth="3" />
                     </g>
                 )}
 
                 {extraction && (
-                    <g>
+                    <g className="pointer-events-none">
                         <line x1="0" y1="0" x2={SIZE} y2={SIZE} stroke="red" strokeWidth="3" />
                         <line x1={SIZE} y1="0" x2="0" y2={SIZE} stroke="red" strokeWidth="3" />
                     </g>
                 )}
 
                 {crown && (
-                    <circle cx={SIZE / 2} cy={SIZE / 2} r={SIZE / 2 - 2} fill="none" stroke="#F59E0B" strokeWidth="3" />
+                    <circle cx={SIZE / 2} cy={SIZE / 2} r={SIZE / 2 - 2} fill="none" stroke="#F59E0B" strokeWidth="3" className="pointer-events-none" />
                 )}
+
+                {renderRangeOverlay()}
             </svg>
             <span className="text-xs font-medium text-gray-600 mt-1 select-none">{number}</span>
             {endo && <div className="absolute -bottom-2 w-1 h-3 bg-purple-500"></div>}

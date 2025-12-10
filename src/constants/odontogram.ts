@@ -26,6 +26,8 @@ export const CONDITION_COLORS: Record<ToothConditionType, string> = {
   fracture: '#EF4444', // Red
   sealant: '#10B981', // Green
   prosthesis: '#F59E0B', // Gold
+  orthodontics: '#10B981', 
+  bridge: '#3B82F6',
   healthy: 'transparent',
 };
 
@@ -40,6 +42,9 @@ export const TOOLBAR_TOOLS: { id: ToothConditionType; label: string; icon?: stri
   { id: 'implant', label: 'Implante', color: CONDITION_COLORS.implant },
   { id: 'sealant', label: 'Sellante', color: CONDITION_COLORS.sealant },
   { id: 'fracture', label: 'Fractura', color: CONDITION_COLORS.fracture },
+  { id: 'prosthesis', label: 'Prótesis', color: CONDITION_COLORS.prosthesis },
+  { id: 'orthodontics', label: 'Ortodoncia', color: '#10B981' }, // Green wire
+  { id: 'bridge', label: 'Puente', color: '#3B82F6' }, // Blue connection
 ];
 
 export const STATUS_LABELS: Record<string, string> = {
