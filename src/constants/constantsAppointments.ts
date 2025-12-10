@@ -40,11 +40,18 @@ export const timeSlots = [
   '19:30',
 ];
 
+export const APPOINTMENT_STATUSES = {
+  SCHEDULED: 'scheduled',
+  CONFIRMED: 'confirmed',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+} as const;
+
 export const appointmentStatuses = [
-  { value: 'scheduled', label: 'Programada' },
-  { value: 'confirmed', label: 'Confirmada' },
-  { value: 'completed', label: 'Completada' },
-  { value: 'cancelled', label: 'Cancelada' },
+  { value: APPOINTMENT_STATUSES.SCHEDULED, label: 'Programada' },
+  { value: APPOINTMENT_STATUSES.CONFIRMED, label: 'Confirmada' },
+  { value: APPOINTMENT_STATUSES.COMPLETED, label: 'Completada' },
+  { value: APPOINTMENT_STATUSES.CANCELLED, label: 'Cancelada' },
 ];  
 
 export const appointmentDurations = [

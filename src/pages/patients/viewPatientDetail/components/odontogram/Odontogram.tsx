@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { useOdontogram } from '@/hooks/useOdontogram';
 import { ToothSVG } from '@/components/odontogram/ToothSVG';
 import { OdontogramSidebar } from './OdontogramSidebar';
-import { UPPER_FDI, LOWER_FDI, UPPER_DECIDUOUS, LOWER_DECIDUOUS, TOOLBAR_TOOLS } from '@/constants/odontogram';
+import { UPPER_FDI, LOWER_FDI, UPPER_DECIDUOUS, LOWER_DECIDUOUS, TOOLBAR_TOOLS, CONDITIONS, SURFACE_CODES } from '@/constants/odontogram';
 import { ToothConditionType, Surface } from '@/types/odontogram';
 import { Loader2, History, Plus, Menu, X, ArrowLeft, CheckCircle, FileText } from 'lucide-react';
 import { Notifications } from '@/components/Notifications';
 import { OdontogramHistoryPanel } from './OdontogramHistoryPanel';
 import { generateOdontogramPDF } from '@/utils/pdfGenerator';
+import { OdontogramPrintPreview } from './OdontogramPrintPreview';
 import { useTreatments } from '@/hooks/useTreatments';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -29,6 +30,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
   // Range Selection State
   const [selectionStart, setSelectionStart] = useState<number | null>(null);
   const [isReviewMode, setIsReviewMode] = useState(false);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   /* Data Hook */
   const {
@@ -101,10 +103,10 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
 
     // Check if tooth is blocked (Missing/Extraction)
     const toothConditions = conditions.filter(c => c.tooth_number === toothNumber);
-    const isBlocked = toothConditions.some(c => c.condition_type === 'missing' || c.condition_type === 'extraction_planned');
+    const isBlocked = toothConditions.some(c => c.condition_type === CONDITIONS.MISSING || c.condition_type === CONDITIONS.EXTRACTION_PLANNED);
 
     // Allow if tool is 'healthy' (to fix) or 'missing'/'extraction' (to toggle/update)
-    const isControlTool = selectedTool === 'healthy' || selectedTool === 'missing' || selectedTool === 'extraction_planned';
+    const isControlTool = selectedTool === CONDITIONS.HEALTHY || selectedTool === CONDITIONS.MISSING || selectedTool === CONDITIONS.EXTRACTION_PLANNED;
 
     if (isBlocked && !isControlTool) {
       Notifications.warning('El diente está ausente o planificado para extracción. No se pueden agregar condiciones superficiales.');
@@ -112,13 +114,13 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
     }
 
     // Handle Range Tools
-    const isRangeTool = ['orthodontics', 'bridge', 'prosthesis'].includes(selectedTool);
+    const isRangeTool = ([CONDITIONS.ORTHODONTICS, CONDITIONS.BRIDGE, CONDITIONS.PROSTHESIS] as string[]).includes(selectedTool || '');
 
     // Range Deletion Logic: Only check if NOT currently selecting a range
     if (selectionStart === null) {
       // Find if this tooth is part of an existing range
       const existingRange = conditions.find(c => {
-        const isRangeType = ['orthodontics', 'bridge', 'prosthesis'].includes(c.condition_type);
+        const isRangeType = ([CONDITIONS.ORTHODONTICS, CONDITIONS.BRIDGE, CONDITIONS.PROSTHESIS] as string[]).includes(c.condition_type);
         if (!isRangeType || !c.range_end_tooth) return false;
         const start = Math.min(c.tooth_number, c.range_end_tooth);
         const end = Math.max(c.tooth_number, c.range_end_tooth);
@@ -133,8 +135,9 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
             await saveCondition.mutateAsync({
               odontogramId: latestOdontogram.id,
               toothNumber: existingRange.tooth_number,
-              surface: 'whole', // Usually ranges are stored on 'whole' or specific surface?
-              condition: 'healthy',
+              // Usually ranges are stored on 'whole' or specific surface?
+              surface: SURFACE_IDS.WHOLE,
+              condition: CONDITIONS.HEALTHY,
               cost: 0
             });
             Notifications.success('Rango eliminado');
@@ -154,7 +157,10 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
           return;
         }
         setSelectionStart(toothNumber);
-        Notifications.info(`Selecciona el diente final para ${selectedTool === 'orthodontics' ? 'Ortodoncia' : selectedTool === 'bridge' ? 'Puente' : 'Prótesis'}`);
+
+        // Helper to get labels
+        const label = TOOLBAR_TOOLS.find(t => t.id === selectedTool)?.label || selectedTool;
+        Notifications.info(`Selecciona el diente final para ${label}`);
         return;
       } else {
         // Complete Range
@@ -222,7 +228,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
   const getRangeInfo = (toothNumber: number) => {
     // Find any condition that covers this tooth in a range
     const rangeCondition = conditions.find(c => {
-      const isRange = ['orthodontics', 'bridge', 'prosthesis'].includes(c.condition_type);
+      const isRange = ([CONDITIONS.ORTHODONTICS, CONDITIONS.BRIDGE, CONDITIONS.PROSTHESIS] as string[]).includes(c.condition_type);
       if (!isRange || !c.range_end_tooth) return false;
       const start = Math.min(c.tooth_number, c.range_end_tooth);
       const end = Math.max(c.tooth_number, c.range_end_tooth);
@@ -247,55 +253,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
 
   const handleExportPDF = async () => {
     if (!currentOdontogram) return;
-
-    // If in Review Mode, we need to show the visual temporarily to capture it
-    // Or we render it off-screen? 
-    // Current strategy: If in review mode, warn or auto-switch?
-    // Auto-switch is tricky with async state.
-    // Let's try: render the visual div always but hide it with position absolute/z-index if in review mode?
-    // No, that messes up the UI.
-
-    // Best user experience:
-    const wasReviewMode = isReviewMode;
-    if (wasReviewMode) {
-      setIsReviewMode(false);
-      // Wait for render
-      setTimeout(async () => {
-        try {
-          await generateOdontogramPDF({
-            clinicName: 'Clínica Dental DevMC',
-            patientName,
-            patientEmail,
-            patientPhone,
-            odontogram: currentOdontogram,
-            conditions,
-            elementIdToCapture: 'odontogram-visual-area'
-          });
-          Notifications.success('PDF generado correctamente');
-        } catch (error) {
-          console.error(error);
-          Notifications.error('Error al generar PDF');
-        } finally {
-          setIsReviewMode(true);
-        }
-      }, 500); // 500ms delay to ensure render
-    } else {
-      try {
-        await generateOdontogramPDF({
-          clinicName: 'Clínica Dental DevMC',
-          patientName,
-          patientEmail,
-          patientPhone,
-          odontogram: currentOdontogram,
-          conditions,
-          elementIdToCapture: 'odontogram-visual-area'
-        });
-        Notifications.success('PDF generado correctamente');
-      } catch (error) {
-        console.error(error);
-        Notifications.error('Error al generar PDF');
-      }
-    }
+    setShowPrintPreview(true);
   };
 
   if (loading) {
@@ -451,14 +409,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
                         </td>
                         <td className="px-4 py-3">
                           {/* Map Surface to Code */}
-                          {c.surface === 'occlusal' ? 'O' :
-                            c.surface === 'incisal' ? 'I' :
-                              c.surface === 'mesial' ? 'M' :
-                                c.surface === 'distal' ? 'D' :
-                                  c.surface === 'vestibular' ? 'V' :
-                                    c.surface === 'lingual' ? 'L' :
-                                      c.surface === 'palatal' ? 'P' :
-                                        c.surface === 'whole' ? '-' : c.surface}
+                          {SURFACE_CODES[c.surface] || c.surface}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
@@ -610,6 +561,17 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
           />
         )}
       </div>
+
+      {showPrintPreview && currentOdontogram && (
+        <OdontogramPrintPreview
+          odontogram={currentOdontogram}
+          conditions={conditions}
+          patientName={patientName}
+          patientEmail={patientEmail}
+          patientPhone={patientPhone}
+          onClose={() => setShowPrintPreview(false)}
+        />
+      )}
     </div>
   );
 };

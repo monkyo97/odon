@@ -3,6 +3,7 @@ import { Clock, User, Plus, Edit, Trash2, FileText } from 'lucide-react';
 import { useTreatments } from '../../../../hooks/useTreatments';
 import { TreatmentModal } from './TreatmentModal';
 import { EditTreatmentModal } from './EditTreatmentModal';
+import { TREATMENT_STATUSES, STATUS_LABELS } from '@/constants/odontogram';
 
 interface TreatmentHistoryProps {
   patientId: string;
@@ -18,7 +19,7 @@ export interface Treatment {
   notes: string;
   cost: number;
   date: string;
-  status: 'completed' | 'in_progress' | 'planned';
+  status: typeof TREATMENT_STATUSES[keyof typeof TREATMENT_STATUSES];
 }
 
 export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId }) => {
@@ -66,20 +67,15 @@ export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId })
 
   const getStatusColor = (status: string) => {
     const colors = {
-      completed: 'bg-green-100 text-green-800',
-      in_progress: 'bg-yellow-100 text-yellow-800',
-      planned: 'bg-blue-100 text-blue-800'
+      [TREATMENT_STATUSES.COMPLETED]: 'bg-green-100 text-green-800',
+      [TREATMENT_STATUSES.IN_PROGRESS]: 'bg-yellow-100 text-yellow-800',
+      [TREATMENT_STATUSES.PLANNED]: 'bg-blue-100 text-blue-800'
     };
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusLabel = (status: string) => {
-    const labels = {
-      completed: 'Completado',
-      in_progress: 'En Proceso',
-      planned: 'Planificado'
-    };
-    return labels[status as keyof typeof labels] || status;
+    return STATUS_LABELS[status] || status;
   };
 
   if (loading) {
@@ -115,7 +111,7 @@ export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId })
                       {getStatusLabel(treatment.status)}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600 mb-2">
                     <div className="flex items-center">
                       <Clock className="h-3 w-3 mr-1" />
@@ -151,7 +147,7 @@ export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId })
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex items-center space-x-2 ml-4">
                   <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded">
                     {treatment.cost > 0 ? `${treatment.cost}€` : 'Sin costo'}

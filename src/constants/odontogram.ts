@@ -51,9 +51,61 @@ export const TOOLBAR_TOOLS: { id: ToothConditionType; label: string; icon?: stri
   { id: 'bridge', label: 'Puente', color: CONDITION_COLORS.bridge },
 ];
 
+// ... existing code ...
+
+// Centralized Constants
+export const CONDITIONS = {
+  CARIES: 'caries',
+  RESTORATION: 'restoration',
+  CROWN: 'crown',
+  ENDODONTICS: 'endodontics',
+  MISSING: 'missing',
+  EXTRACTION_PLANNED: 'extraction_planned',
+  IMPLANT: 'implant',
+  FRACTURE: 'fracture',
+  SEALANT: 'sealant',
+  PROSTHESIS: 'prosthesis',
+  ORTHODONTICS: 'orthodontics',
+  BRIDGE: 'bridge',
+  HEALTHY: 'healthy',
+} as const;
+
+export const SURFACE_IDS = {
+  OCCLUSAL: 'occlusal',
+  INCISAL: 'incisal',
+  MESIAL: 'mesial',
+  DISTAL: 'distal',
+  VESTIBULAR: 'vestibular',
+  LINGUAL: 'lingual',
+  PALATAL: 'palatal',
+  CERVICAL: 'cervical',
+  WHOLE: 'whole',
+} as const;
+
+// Codes for table display
+export const SURFACE_CODES: Record<string, string> = {
+  [SURFACE_IDS.OCCLUSAL]: 'O',
+  [SURFACE_IDS.INCISAL]: 'I',
+  [SURFACE_IDS.MESIAL]: 'M',
+  [SURFACE_IDS.DISTAL]: 'D',
+  [SURFACE_IDS.VESTIBULAR]: 'V',
+  [SURFACE_IDS.LINGUAL]: 'L',
+  [SURFACE_IDS.PALATAL]: 'P',
+  [SURFACE_IDS.CERVICAL]: 'C',
+  [SURFACE_IDS.WHOLE]: '-',
+};
+
+export const TREATMENT_STATUSES = {
+  PLANNED: 'planned',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
+  EXISTING: 'existing',
+} as const;
+
 export const STATUS_LABELS: Record<string, string> = {
-  planned: 'Planificado',
-  in_progress: 'En Proceso',
-  completed: 'Completado',
-  existing: 'Preexistente',
+  [TREATMENT_STATUSES.PLANNED]: 'Planificado',
+  [TREATMENT_STATUSES.IN_PROGRESS]: 'En Proceso',
+  [TREATMENT_STATUSES.COMPLETED]: 'Completado',
+  [TREATMENT_STATUSES.EXISTING]: 'Preexistente',
 };

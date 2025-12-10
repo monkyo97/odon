@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, FileText, DollarSign } from 'lucide-react';
 import type { Treatment } from './TreatmentHistory';
+import { TREATMENT_STATUSES, STATUS_LABELS, SURFACE_IDS } from '@/constants/odontogram';
 
 interface EditTreatmentModalProps {
   isOpen: boolean;
@@ -23,7 +24,7 @@ export const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
     notes: '',
     cost: '',
     date: new Date().toISOString().split('T')[0],
-    status: 'completed' as const
+    status: TREATMENT_STATUSES.COMPLETED as typeof TREATMENT_STATUSES[keyof typeof TREATMENT_STATUSES]
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,7 +48,7 @@ export const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       await onSave({
         ...treatment,
@@ -89,12 +90,12 @@ export const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
 
   const surfaces = [
     { value: '', label: 'No aplica' },
-    { value: 'Oclusal', label: 'Oclusal' },
-    { value: 'Vestibular', label: 'Vestibular' },
-    { value: 'Lingual', label: 'Lingual' },
-    { value: 'Mesial', label: 'Mesial' },
-    { value: 'Distal', label: 'Distal' },
-    { value: 'Incisal', label: 'Incisal' },
+    { value: SURFACE_IDS.OCCLUSAL, label: 'Oclusal' },
+    { value: SURFACE_IDS.VESTIBULAR, label: 'Vestibular' },
+    { value: SURFACE_IDS.LINGUAL, label: 'Lingual' },
+    { value: SURFACE_IDS.MESIAL, label: 'Mesial' },
+    { value: SURFACE_IDS.DISTAL, label: 'Distal' },
+    { value: SURFACE_IDS.INCISAL, label: 'Incisal' },
     { value: 'Múltiples', label: 'Múltiples superficies' }
   ];
 
@@ -103,7 +104,7 @@ export const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
       <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Editar Tratamiento</h2>
-          <button 
+          <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
@@ -140,9 +141,9 @@ export const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
-                <option value="completed">Completado</option>
-                <option value="in_progress">En Proceso</option>
-                <option value="planned">Planificado</option>
+                <option value={TREATMENT_STATUSES.COMPLETED}>{STATUS_LABELS[TREATMENT_STATUSES.COMPLETED]}</option>
+                <option value={TREATMENT_STATUSES.IN_PROGRESS}>{STATUS_LABELS[TREATMENT_STATUSES.IN_PROGRESS]}</option>
+                <option value={TREATMENT_STATUSES.PLANNED}>{STATUS_LABELS[TREATMENT_STATUSES.PLANNED]}</option>
               </select>
             </div>
 

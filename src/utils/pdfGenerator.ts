@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Odontogram, ToothCondition } from '@/types/odontogram';
+import { SURFACE_CODES, TOOLBAR_TOOLS } from '@/constants/odontogram';
 
 interface GeneratorProps {
     clinicName?: string;
@@ -86,11 +87,14 @@ export const generateOdontogramPDF = async ({
     doc.setFillColor(240, 240, 240);
     doc.rect(14, yPos - 5, pageWidth - 28, 8, 'F');
     doc.setFont('helvetica', 'bold');
+    
+    // Header Columns
     doc.text('Fecha', 16, yPos);
-    doc.text('Diente', 50, yPos);
-    doc.text('Diagnóstico', 80, yPos);
-    doc.text('Notas', 130, yPos);
-    doc.text('Importe', pageWidth - 30, yPos, { align: 'right' });
+    doc.text('Diente', 45, yPos);
+    doc.text('Sup.', 65, yPos);
+    doc.text('Diagnóstico', 85, yPos);
+    doc.text('Notas', 135, yPos);
+    doc.text('Importe', pageWidth - 16, yPos, { align: 'right' });
     
     yPos += 8;
     doc.setFont('helvetica', 'normal');
@@ -104,15 +108,17 @@ export const generateOdontogramPDF = async ({
 
         const date = c.created_date ? new Date(c.created_date).toLocaleDateString() : '-';
         const tooth = c.range_end_tooth ? `${c.tooth_number}-${c.range_end_tooth}` : c.tooth_number.toString();
-        const type = c.condition_type; // Maybe map to label
+        const surface = SURFACE_CODES[c.surface] || c.surface;
+        const type = TOOLBAR_TOOLS.find(t => t.id === c.condition_type)?.label || c.condition_type;
         const notes = c.notes?.substring(0, 30) || '-';
         const cost = c.cost ? `$${c.cost}` : '$0';
 
         doc.text(date, 16, yPos);
-        doc.text(tooth, 50, yPos);
-        doc.text(type, 80, yPos);
-        doc.text(notes, 130, yPos);
-        doc.text(cost, pageWidth - 30, yPos, { align: 'right' });
+        doc.text(tooth, 45, yPos);
+        doc.text(surface, 65, yPos);
+        doc.text(type, 85, yPos);
+        doc.text(notes, 135, yPos);
+        doc.text(cost, pageWidth - 16, yPos, { align: 'right' });
 
         yPos += 8;
     });
