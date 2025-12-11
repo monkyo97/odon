@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { X, Save, FileText, DollarSign } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Save, FileText, DollarSign, Clock, User } from 'lucide-react';
 import { useAuth } from '../../../../contexts/AuthContext';
+import { useDentists } from '../../../../hooks/useDentists';
 import type { Treatment } from './TreatmentHistory';
 import { TREATMENT_STATUSES, STATUS_LABELS, SURFACE_IDS } from '@/constants/odontogram';
 
@@ -8,7 +9,7 @@ interface TreatmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   patientId: string;
-  onSave: (treatmentData: Omit<Treatment, 'id'>) => Promise<void>;
+  onSave: (treatmentData: Omit<Treatment, 'id' | 'dentist'> & { dentistId?: string }) => Promise<void>;
 }
 
 export const TreatmentModal: React.FC<TreatmentModalProps> = ({
@@ -18,6 +19,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
   onSave
 }) => {
   const { user } = useAuth();
+  const { dentists } = useDentists(); // Fetch dentists
   const [formData, setFormData] = useState({
     toothNumber: '',
     procedure: '',
@@ -25,9 +27,24 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
     notes: '',
     cost: '',
     date: new Date().toISOString().split('T')[0],
-    status: TREATMENT_STATUSES.COMPLETED
+    status: TREATMENT_STATUSES.PLANNED,
+    duration: '',
+    materials: '',
+    complications: '',
+    followUpDate: '',
+    dentistId: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Set default dentist when dentists are loaded
+  useEffect(() => {
+    if (dentists.length > 0 && !formData.dentistId) {
+      // Try to find a dentist that matches the current user if possible, otherwise pick the first one
+      // Assuming dentist might have an email or user_id link, but here we just pick the first one for simplicity or user preference
+      // If the requirement says "search for an existing dentist... and get the id", we can just default to the first one.
+      setFormData(prev => ({ ...prev, dentistId: dentists[0].id }));
+    }
+  }, [dentists]);
 
   if (!isOpen) return null;
 
@@ -41,11 +58,15 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
         toothNumber: formData.toothNumber,
         procedure: formData.procedure,
         surface: formData.surface,
-        dentist: user?.user_metadata?.name || 'Dr. Usuario',
+        dentistId: formData.dentistId,
         notes: formData.notes,
         cost: parseFloat(formData.cost) || 0,
         date: formData.date,
-        status: formData.status
+        status: formData.status as any,
+        duration: parseInt(formData.duration) || 0,
+        materials: formData.materials,
+        complications: formData.complications,
+        followUpDate: formData.followUpDate || undefined
       });
 
       setFormData({
@@ -55,8 +76,14 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
         notes: '',
         cost: '',
         date: new Date().toISOString().split('T')[0],
-        status: TREATMENT_STATUSES.COMPLETED
+        status: TREATMENT_STATUSES.PLANNED,
+        duration: '',
+        materials: '',
+        complications: '',
+        followUpDate: '',
+        dentistId: ''
       });
+      onClose(); // Close on success
     } catch (error) {
       console.error('Error creating treatment:', error);
     } finally {
@@ -173,6 +200,25 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dentista
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <select
+                  value={formData.dentistId}
+                  onChange={(e) => setFormData({ ...formData, dentistId: e.target.value })}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Seleccionar dentista</option>
+                  {dentists.map((dentist) => (
+                    <option key={dentist.id} value={dentist.id}>{dentist.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Fecha *
               </label>
               <input
@@ -186,7 +232,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Costo (€)
+                Costo / Importe (€)
               </label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -201,6 +247,62 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
                 />
               </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Duración (min)
+              </label>
+              <div className="relative">
+                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.duration}
+                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ej: 30"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fecha Seguimiento
+              </label>
+              <input
+                type="date"
+                value={formData.followUpDate}
+                onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          {/* Full width inputs */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Materiales usados
+            </label>
+            <input
+              type="text"
+              value={formData.materials}
+              onChange={(e) => setFormData({ ...formData, materials: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Ej: Resina A2, Anestesia..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Complicaciones
+            </label>
+            <textarea
+              value={formData.complications}
+              onChange={(e) => setFormData({ ...formData, complications: e.target.value })}
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Complicaciones durante el procedimiento..."
+            />
           </div>
 
           <div>

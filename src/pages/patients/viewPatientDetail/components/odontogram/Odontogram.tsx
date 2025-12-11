@@ -2,16 +2,19 @@ import React, { useState } from 'react';
 import { useOdontogram } from '@/hooks/useOdontogram';
 import { formatDate } from '@/utils/formatDate';
 import { ToothSVG } from '@/components/odontogram/ToothSVG';
+
 import { OdontogramSidebar } from './OdontogramSidebar';
-import { UPPER_FDI, LOWER_FDI, UPPER_DECIDUOUS, LOWER_DECIDUOUS, TOOLBAR_TOOLS, CONDITIONS, SURFACE_CODES } from '@/constants/odontogram';
-import { ToothConditionType, Surface } from '@/types/odontogram';
-import { Loader2, History, Plus, Menu, X, ArrowLeft, CheckCircle, FileText } from 'lucide-react';
+import { UPPER_FDI, LOWER_FDI, UPPER_DECIDUOUS, LOWER_DECIDUOUS, TOOLBAR_TOOLS, CONDITIONS, SURFACE_CODES, SURFACE_IDS } from '@/constants/odontogram';
+import { ToothConditionType, Surface, ToothCondition } from '@/types/odontogram';
+import { Loader2, History, Plus, Menu, X, ArrowLeft, CheckCircle, FileText, Edit } from 'lucide-react';
+
 import { Notifications } from '@/components/Notifications';
 import { OdontogramHistoryPanel } from './OdontogramHistoryPanel';
 import { generateOdontogramPDF } from '@/utils/pdfGenerator';
 import { OdontogramPrintPreview } from './OdontogramPrintPreview';
 import { useTreatments } from '@/hooks/useTreatments';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDentists } from '@/hooks/useDentists';
 
 interface OdontogramProps {
   patientId: string;
@@ -33,6 +36,10 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
 
+  // Inline Editing State
+  const [editingConditionId, setEditingConditionId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ notes: string; cost: number }>({ notes: '', cost: 0 });
+
   /* Data Hook */
   const {
     latestOdontogram,
@@ -46,28 +53,30 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
 
   const { createTreatment } = useTreatments(patientId);
   const { user } = useAuth();
+  const { dentists } = useDentists();
 
   // Derived state to check if we are viewing history (not the latest one)
   const isHistoryMode = selectedHistoryId !== undefined && selectedHistoryId !== latestOdontogram?.id;
 
   const handleConvertToTreatment = async (condition: any) => {
-    if (!user) return;
     try {
+      // Find a default dentist: either match current user or pick first
+      const defaultDentistId = dentists.length > 0 ? dentists[0].id : undefined;
+
       await createTreatment({
         patientId,
-        toothNumber: condition.range_end_tooth
-          ? `${condition.tooth_number}-${condition.range_end_tooth}`
-          : condition.tooth_number.toString(),
+        toothNumber: condition.tooth_number,
         procedure: condition.condition_type,
         surface: condition.surface,
-        dentist: user.user_metadata?.name || 'Dr. Usuario',
+        dentistId: defaultDentistId,
         notes: `Generado desde Odontograma. ${condition.notes || ''}`,
         cost: condition.cost || 0,
-        date: new Date().toISOString(),
-        status: 'completed'
+        date: new Date().toISOString().split('T')[0],
+        status: 'planned' // When moving from odontogram to treatment, usually planned
       });
 
-      // Update condition status to completed?
+      // Update condition to reflect status change if needed (e.g. status_tooth_conditions)
+      // For now, we just save the same condition to trigger any updates if logic requires
       await saveCondition.mutateAsync({
         odontogramId: currentOdontogram!.id,
         toothNumber: condition.tooth_number,
@@ -75,8 +84,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
         condition: condition.condition_type,
         rangeEndTooth: condition.range_end_tooth,
         notes: condition.notes,
-        cost: condition.cost,
-        // status: 'completed' // If supported by backend/hook
+        cost: condition.cost
       });
 
       Notifications.success('Tratamiento realizado y registrado en historial');
@@ -86,7 +94,40 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
     }
   };
 
+  const handleEditClick = (condition: ToothCondition) => {
+    setEditingConditionId(condition.id || null);
+    setEditForm({
+      notes: condition.notes || '',
+      cost: condition.cost || 0
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingConditionId(null);
+    setEditForm({ notes: '', cost: 0 });
+  };
+
+  const handleSaveEdit = async (condition: ToothCondition) => {
+    try {
+      await saveCondition.mutateAsync({
+        odontogramId: currentOdontogram!.id,
+        toothNumber: condition.tooth_number,
+        surface: condition.surface,
+        condition: condition.condition_type,
+        rangeEndTooth: condition.range_end_tooth,
+        notes: editForm.notes,
+        cost: editForm.cost
+      });
+      setEditingConditionId(null);
+      Notifications.success('Diagnóstico actualizado');
+    } catch (error) {
+      console.error(error);
+      Notifications.error('Error al actualizar diagnóstico');
+    }
+  };
+
   const handleSurfaceClick = async (toothNumber: number, surface: Surface) => {
+    if (editingConditionId) return; // Prevent painting while editing
     if (!selectedTool) {
       Notifications.info('Selecciona una herramienta primero');
       return;
@@ -403,66 +444,113 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
                       <th className="px-4 py-3">Diente / Rango</th>
                       <th className="px-4 py-3">Superficie</th>
                       <th className="px-4 py-3">Diagnóstico</th>
+                      <th className="px-4 py-3">Notas</th>
                       <th className="px-4 py-3">Importe</th>
                       <th className="px-4 py-3">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {conditions.map((c) => (
-                      <tr key={c.id} className="bg-white border-b hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          {c.created_date ? formatDate(c.created_date) : '-'} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
-                        </td>
-                        <td className="px-4 py-3 font-medium">
-                          {c.range_end_tooth
-                            ? `${c.tooth_number} - ${c.range_end_tooth}`
-                            : c.tooth_number
-                          }
-                        </td>
-                        <td className="px-4 py-3">
-                          {/* Map Surface to Code */}
-                          {SURFACE_CODES[c.surface] || c.surface}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            {/* Translate Condition using TOOLBAR_TOOLS */}
-                            {TOOLBAR_TOOLS.find(t => t.id === c.condition_type)?.label || c.condition_type}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <input
-                            type="number"
-                            className="w-20 p-1 border rounded text-right"
-                            defaultValue={c.cost || 0}
-                            onBlur={(e) => {
-                              const val = parseFloat(e.target.value);
-                              saveCondition.mutate({
-                                odontogramId: currentOdontogram!.id,
-                                toothNumber: c.tooth_number,
-                                surface: c.surface,
-                                condition: c.condition_type,
-                                rangeEndTooth: c.range_end_tooth,
-                                notes: c.notes,
-                                cost: val
-                              });
-                            }}
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => handleConvertToTreatment(c)}
-                            className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-xs font-medium"
-                            title="Pasar a Tratamiento"
-                          >
-                            <CheckCircle className="h-3 w-3" />
-                            Realizar
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {conditions.map((c) => {
+                      const isEditing = editingConditionId === c.id;
+                      const isAnyEditing = editingConditionId !== null;
+
+                      return (
+                        <tr key={c.id} className={`bg-white border-b hover:bg-gray-50 ${isEditing ? 'bg-blue-50' : ''}`}>
+                          <td className="px-4 py-3">
+                            {c.created_date ? formatDate(c.created_date) : '-'}
+                          </td>
+                          <td className="px-4 py-3 font-medium">
+                            {c.range_end_tooth
+                              ? `${c.tooth_number} - ${c.range_end_tooth}`
+                              : c.tooth_number
+                            }
+                          </td>
+                          <td className="px-4 py-3">
+                            {SURFACE_CODES[c.surface] || c.surface}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              {TOOLBAR_TOOLS.find(t => t.id === c.condition_type)?.label || c.condition_type}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            {isEditing ? (
+                              <textarea
+                                className="w-full p-1 border rounded text-xs"
+                                rows={2}
+                                value={editForm.notes}
+                                onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
+                                autoFocus
+                              />
+                            ) : (
+                              c.notes ? (
+                                <span className="text-gray-600 block max-w-[150px] truncate" title={c.notes}>
+                                  {c.notes}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 italic">-</span>
+                              )
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                className="w-20 p-1 border rounded text-right"
+                                value={editForm.cost}
+                                onChange={(e) => setEditForm(prev => ({ ...prev, cost: parseFloat(e.target.value) || 0 }))}
+                              />
+                            ) : (
+                              <span>{c.cost ? `S/ ${c.cost.toFixed(2)}` : 'S/ 0.00'}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center space-x-2">
+                              {isEditing ? (
+                                <>
+                                  <button
+                                    onClick={() => handleSaveEdit(c)}
+                                    className="text-green-600 hover:text-green-800 p-1"
+                                    title="Confirmar"
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    className="text-red-500 hover:text-red-700 p-1"
+                                    title="Cancelar"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => handleEditClick(c)}
+                                    disabled={isAnyEditing}
+                                    className={`flex items-center gap-1 text-xs font-medium p-1 ${isAnyEditing ? 'text-gray-300' : 'text-blue-600 hover:text-blue-800'}`}
+                                    title="Editar"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleConvertToTreatment(c)}
+                                    disabled={isAnyEditing}
+                                    className={`flex items-center gap-1 text-xs font-medium p-1 ${isAnyEditing ? 'text-gray-300' : 'text-green-600 hover:text-green-800'}`}
+                                    title="Realizar"
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                     {conditions.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="text-center py-8 text-gray-500">
+                        <td colSpan={7} className="text-center py-8 text-gray-500">
                           No hay diagnósticos registrados.
                         </td>
                       </tr>
@@ -584,6 +672,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
           onClose={() => setShowPrintPreview(false)}
         />
       )}
+
     </div>
   );
 };

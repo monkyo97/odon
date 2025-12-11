@@ -24,7 +24,8 @@ export interface ToothCondition {
   range_end_tooth?: number; // For ranges (Ortho, Bridge, Prosthesis)
   surface: Surface;
   condition_type: ToothConditionType;
-  status: ConditionStatus;
+  status: '0' | '1';
+  status_tooth_conditions: ConditionStatus;
   notes?: string;
   cost?: number; // Cost for list view
   created_by_user?: string;
@@ -41,6 +42,7 @@ export interface Odontogram {
   name: string;
   type: 'initial' | 'evolution' | 'treatment_plan';
   date: string;
+  status: '0' | '1';
   notes?: string;
   created_by_user?: string;
   created_date: string;

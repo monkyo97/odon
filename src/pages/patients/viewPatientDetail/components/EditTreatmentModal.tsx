@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, FileText, DollarSign } from 'lucide-react';
+import { X, Save, FileText, DollarSign, Clock, User } from 'lucide-react';
+import { useDentists } from '../../../../hooks/useDentists';
 import type { Treatment } from './TreatmentHistory';
 import { TREATMENT_STATUSES, STATUS_LABELS, SURFACE_IDS } from '@/constants/odontogram';
 
@@ -16,15 +17,20 @@ export const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
   treatment,
   onSave
 }) => {
+  const { dentists } = useDentists();
   const [formData, setFormData] = useState({
     toothNumber: '',
     procedure: '',
     surface: '',
-    dentist: '',
+    dentistId: '',
     notes: '',
     cost: '',
     date: new Date().toISOString().split('T')[0],
-    status: TREATMENT_STATUSES.COMPLETED as typeof TREATMENT_STATUSES[keyof typeof TREATMENT_STATUSES]
+    status: TREATMENT_STATUSES.COMPLETED as typeof TREATMENT_STATUSES[keyof typeof TREATMENT_STATUSES],
+    duration: '',
+    materials: '',
+    complications: '',
+    followUpDate: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -34,11 +40,15 @@ export const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
         toothNumber: treatment.toothNumber,
         procedure: treatment.procedure,
         surface: treatment.surface,
-        dentist: treatment.dentist,
+        dentistId: treatment.dentistId || '',
         notes: treatment.notes,
         cost: treatment.cost.toString(),
         date: treatment.date,
-        status: treatment.status
+        status: treatment.status,
+        duration: treatment.duration ? treatment.duration.toString() : '',
+        materials: treatment.materials || '',
+        complications: treatment.complications || '',
+        followUpDate: treatment.followUpDate || ''
       });
     }
   }, [treatment]);
@@ -55,11 +65,16 @@ export const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
         toothNumber: formData.toothNumber,
         procedure: formData.procedure,
         surface: formData.surface,
-        dentist: formData.dentist,
+        dentistId: formData.dentistId,
+        dentist: dentists.find(d => d.id === formData.dentistId)?.name || treatment.dentist, // Update display name aggressively
         notes: formData.notes,
         cost: parseFloat(formData.cost) || 0,
         date: formData.date,
-        status: formData.status
+        status: formData.status as any,
+        duration: parseInt(formData.duration) || 0,
+        materials: formData.materials,
+        complications: formData.complications,
+        followUpDate: formData.followUpDate || undefined
       });
     } catch (error) {
       console.error('Error updating treatment:', error);
@@ -179,13 +194,19 @@ export const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Dentista
               </label>
-              <input
-                type="text"
-                value={formData.dentist}
-                onChange={(e) => setFormData({ ...formData, dentist: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Nombre del dentista"
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <select
+                  value={formData.dentistId}
+                  onChange={(e) => setFormData({ ...formData, dentistId: e.target.value })}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Seleccionar dentista</option>
+                  {dentists.map((dentist) => (
+                    <option key={dentist.id} value={dentist.id}>{dentist.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div>
@@ -203,7 +224,7 @@ export const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Costo (€)
+                Costo / Importe (€)
               </label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -218,6 +239,61 @@ export const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
                 />
               </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Duración (min)
+              </label>
+              <div className="relative">
+                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.duration}
+                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ej: 30"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fecha Seguimiento
+              </label>
+              <input
+                type="date"
+                value={formData.followUpDate}
+                onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Materiales usados
+            </label>
+            <input
+              type="text"
+              value={formData.materials}
+              onChange={(e) => setFormData({ ...formData, materials: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Ej: Resina A2, Anestesia..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Complicaciones
+            </label>
+            <textarea
+              value={formData.complications}
+              onChange={(e) => setFormData({ ...formData, complications: e.target.value })}
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Complicaciones durante el procedimiento..."
+            />
           </div>
 
           <div>

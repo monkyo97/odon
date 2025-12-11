@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Trash2, Edit, CheckCircle, Clock, User, Plus, FileText } from 'lucide-react';
+import { Trash2, Edit, Clock, User, Plus, FileText } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
 import { useTreatments } from '../../../../hooks/useTreatments';
 import { TreatmentModal } from './TreatmentModal';
@@ -17,11 +17,16 @@ export interface Treatment {
   toothNumber: string;
   procedure: string;
   surface: string;
-  dentist: string;
+  dentist: string; // Display name
+  dentistId?: string; // ID
   notes: string;
   cost: number;
   date: string;
-  status: typeof TREATMENT_STATUSES[keyof typeof TREATMENT_STATUSES];
+  status: 'planned' | 'in_progress' | 'completed';
+  duration?: number;
+  materials?: string;
+  complications?: string;
+  followUpDate?: string;
 }
 
 export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId }) => {
@@ -30,7 +35,7 @@ export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId })
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
 
-  const handleCreateTreatment = async (treatmentData: Omit<Treatment, 'id'>) => {
+  const handleCreateTreatment = async (treatmentData: Omit<Treatment, 'id' | 'dentist'> & { dentistId?: string }) => {
     try {
       await createTreatment(treatmentData);
       setIsModalOpen(false);
