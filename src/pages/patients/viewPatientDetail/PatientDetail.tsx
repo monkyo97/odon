@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { formatDate } from '@/utils/formatDate';
 import { ArrowLeft, Edit, Calendar, FileText, Bluetooth as Tooth, Trash2, Info, ChevronUp, ChevronDown, User } from 'lucide-react';
 import { Odontogram } from './components/odontogram/Odontogram';
 import { PatientInfo } from './components/PatientInfo';
@@ -91,7 +92,7 @@ export const PatientDetail: React.FC = () => {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
-            <p className="text-gray-600">{patient.age} años • Registrado: {new Date(patient.created_date).toLocaleDateString('es-ES')}</p>
+            <p className="text-gray-600">{patient.age} años • Registrado: {formatDate(patient.created_date)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}</p>
           </div>
 
           <button

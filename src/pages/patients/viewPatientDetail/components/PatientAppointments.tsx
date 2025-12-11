@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, Plus, User, FileText, Edit, Trash2 } from 'lucide-react';
+import { formatDate } from '@/utils/formatDate';
 import { useAppointments, Appointment } from '../../../../hooks/useAppointments';
 import { AppointmentModal } from '../../../appointments/components/AppointmentModal';
 import { appointmentColors, appointmentStatuses } from '../../../../constants/constantsAppointments';
@@ -109,7 +110,7 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-600 mb-3">
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2" />
-                      {new Date(appointment.date).toLocaleDateString('es-ES')}
+                      {formatDate(appointment.date)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
                     </div>
                     <div className="flex items-center">
                       <Clock className="h-4 w-4 mr-2" />

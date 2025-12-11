@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDate } from '@/utils/formatDate';
 import { Odontogram } from '@/types/odontogram';
 import { Clock, CheckCircle2, Circle } from 'lucide-react';
 
@@ -62,7 +63,7 @@ export const OdontogramHistoryPanel: React.FC<OdontogramHistoryPanelProps> = ({
                             <div className="space-y-1">
                                 <div className="text-xs text-gray-500 flex justify-between">
                                     <span>Fecha:</span>
-                                    <span>{new Date(odon.date).toLocaleDateString()}</span>
+                                    <span>{formatDate(odon.date)}</span> {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
                                 </div>
                                 <div className="text-xs text-gray-500 flex justify-between">
                                     <span>Tipo:</span>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Save, FileText, AlertTriangle, Pill, User } from 'lucide-react';
+import { Save, Trash2, Plus, StickyNote, AlertTriangle, Pill, User, FileText } from 'lucide-react';
+import { formatDate } from '@/utils/formatDate';
 import { supabase } from '../../../../lib/supabase';
 import { useAuth } from '../../../../contexts/AuthContext';
 
@@ -40,7 +41,7 @@ export const OdontogramNotes: React.FC<OdontogramNotesProps> = ({ patientId }) =
 
   const fetchNotes = async () => {
     if (!user || !patientId) return;
-    
+
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -52,7 +53,7 @@ export const OdontogramNotes: React.FC<OdontogramNotesProps> = ({ patientId }) =
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
         throw error;
       }
-      
+
       if (data) {
         setNotes(data);
       }
@@ -65,10 +66,10 @@ export const OdontogramNotes: React.FC<OdontogramNotesProps> = ({ patientId }) =
 
   const saveNotes = async () => {
     if (!user || !patientId) return;
-    
+
     try {
       setSaving(true);
-      
+
       const { data, error } = await supabase
         .from('patient_notes')
         .upsert({
@@ -80,7 +81,7 @@ export const OdontogramNotes: React.FC<OdontogramNotesProps> = ({ patientId }) =
         .single();
 
       if (error) throw error;
-      
+
       setNotes(data);
       setLastSaved(new Date());
     } catch (error) {
@@ -106,7 +107,7 @@ export const OdontogramNotes: React.FC<OdontogramNotesProps> = ({ patientId }) =
         <div className="flex items-center space-x-3">
           {lastSaved && (
             <span className="text-sm text-gray-500">
-              Guardado: {lastSaved.toLocaleTimeString('es-ES')}
+              Guardado: {formatDate(lastSaved)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
             </span>
           )}
           <button
@@ -215,7 +216,7 @@ export const OdontogramNotes: React.FC<OdontogramNotesProps> = ({ patientId }) =
       {/* Auto-save notice */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
         <p className="text-sm text-blue-800">
-          💡 <strong>Consejo:</strong> Guarda regularmente tus observaciones para no perder información importante. 
+          💡 <strong>Consejo:</strong> Guarda regularmente tus observaciones para no perder información importante.
           Estas notas son fundamentales para el seguimiento del paciente y la continuidad del tratamiento.
         </p>
       </div>

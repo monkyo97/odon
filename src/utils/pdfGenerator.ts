@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { formatDate } from './formatDate';
 import html2canvas from 'html2canvas';
 import { Odontogram, ToothCondition } from '@/types/odontogram';
 import { SURFACE_CODES, TOOLBAR_TOOLS } from '@/constants/odontogram';
@@ -30,7 +31,7 @@ export const generateOdontogramPDF = async ({
     doc.text(clinicName, 14, 20);
     
     doc.setFontSize(10);
-    doc.text(`Fecha de Generación: ${new Date().toLocaleDateString()}`, pageWidth - 14, 20, { align: 'right' });
+    doc.text(`Fecha de Generación: ${formatDate(new Date())}`, pageWidth - 14, 20, { align: 'right' }); // Aqui hay fecha mostrar formato 'dd/MM/yyyy'
     
     // 2. Patient Info
     doc.setFontSize(14);
@@ -42,7 +43,7 @@ export const generateOdontogramPDF = async ({
 
     // 3. Odontogram Info
     doc.text(`Odontograma: ${odontogram.name}`, 100, 42);
-    doc.text(`Fecha Creación: ${new Date(odontogram.created_date).toLocaleDateString()}`, 100, 47);
+    doc.text(`Fecha Creación: ${formatDate(odontogram.created_date)}`, 100, 47); // Aqui hay fecha mostrar formato 'dd/MM/yyyy'
 
     // 4. Capture Visual
     const element = document.getElementById(elementIdToCapture);
@@ -106,7 +107,7 @@ export const generateOdontogramPDF = async ({
             yPos = 20;
         }
 
-        const date = c.created_date ? new Date(c.created_date).toLocaleDateString() : '-';
+        const date = c.created_date ? formatDate(c.created_date) : '-'; // Aqui hay fecha mostrar formato 'dd/MM/yyyy'
         const tooth = c.range_end_tooth ? `${c.tooth_number}-${c.range_end_tooth}` : c.tooth_number.toString();
         const surface = SURFACE_CODES[c.surface] || c.surface;
         const type = TOOLBAR_TOOLS.find(t => t.id === c.condition_type)?.label || c.condition_type;
@@ -123,5 +124,5 @@ export const generateOdontogramPDF = async ({
         yPos += 8;
     });
 
-    doc.save(`Odontograma_${patientName}_${new Date().toLocaleDateString()}.pdf`);
+    doc.save(`Odontograma_${patientName}_${formatDate(new Date())}.pdf`); // Aqui hay fecha mostrar formato 'dd/MM/yyyy'
 };

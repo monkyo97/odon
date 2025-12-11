@@ -1,4 +1,6 @@
 import { Users, Calendar, TrendingUp, AlertCircle, DollarSign } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { formatDate } from '@/utils/formatDate';
 import { StatsCard } from '../components/StatsCard';
 import { useDashboardMetrics } from '../hooks/useDashboardMetrics';
 
@@ -98,7 +100,7 @@ export const Dashboard: React.FC = () => {
                   <p className="text-sm font-medium text-gray-900">{sale.procedure}</p>
                   <div className="flex justify-between items-center mt-1">
                     <p className="text-xs text-gray-600">
-                      {new Date(sale.date).toLocaleDateString()}
+                      {formatDate(sale.date)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
                     </p>
                     <span className="text-sm font-bold text-gray-700">
                       ${sale.cost?.toLocaleString()}

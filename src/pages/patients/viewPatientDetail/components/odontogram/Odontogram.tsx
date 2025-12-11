@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useOdontogram } from '@/hooks/useOdontogram';
+import { formatDate } from '@/utils/formatDate';
 import { ToothSVG } from '@/components/odontogram/ToothSVG';
 import { OdontogramSidebar } from './OdontogramSidebar';
 import { UPPER_FDI, LOWER_FDI, UPPER_DECIDUOUS, LOWER_DECIDUOUS, TOOLBAR_TOOLS, CONDITIONS, SURFACE_CODES } from '@/constants/odontogram';
@@ -215,7 +216,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
   const handleCreateVersion = async () => {
     try {
       setSaving(true);
-      await createOdontogram.mutateAsync(`Evolución ${new Date().toLocaleDateString()}`);
+      await createOdontogram.mutateAsync(`Evolución ${formatDate(new Date())}`);
       Notifications.success('Nueva versión del odontograma creada');
     } catch (error) {
       Notifications.error('Error al crear versión');
@@ -306,9 +307,20 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
               </div>
             </div>
             <p className="text-sm text-gray-500">
-              {currentOdontogram
-                ? `${currentOdontogram.name} - ${new Date(currentOdontogram.date).toLocaleDateString()}`
-                : 'Sin odontograma registrado'}
+              {(() => {
+                const sortedOdontograms = [...(odontograms || [])].sort((a, b) =>
+                  new Date(a.date).getTime() - new Date(b.date).getTime()
+                );
+
+                const firstDate = sortedOdontograms.length > 0 ? formatDate(sortedOdontograms[0].date) : '-';
+                const lastEvolution = currentOdontogram?.name ? currentOdontogram.name : '-';
+
+                const displayString = currentOdontogram
+                  ? `Inicial: ${firstDate} - ${lastEvolution}`
+                  : 'Nuevo Odontograma';
+
+                return currentOdontogram ? displayString : 'Sin odontograma registrado';
+              })()}
             </p>
           </div>
         </div>
@@ -399,7 +411,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
                     {conditions.map((c) => (
                       <tr key={c.id} className="bg-white border-b hover:bg-gray-50">
                         <td className="px-4 py-3">
-                          {c.created_date ? new Date(c.created_date).toLocaleDateString() : '-'}
+                          {c.created_date ? formatDate(c.created_date) : '-'} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
                         </td>
                         <td className="px-4 py-3 font-medium">
                           {c.range_end_tooth

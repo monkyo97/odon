@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatDate } from '@/utils/formatDate';
 import { Calendar, Clock, Phone, Edit, Trash2 } from 'lucide-react';
 import type { Appointment } from '@hooks/useAppointments';
 import { useAppointments } from '@hooks/useAppointments';
@@ -73,13 +74,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 text-sm text-gray-600">
           <div className="flex items-center">
             <Calendar className="h-4 w-4 mr-2" />
-            {new Date(appointment.date).toLocaleDateString('es-ES', {
-              //weekday: 'long', 
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              timeZone: 'UTC',
-            })}
+            {formatDate(appointment.date)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
           </div>
           <div className="flex items-center">
             <Clock className="h-4 w-4 mr-2" />

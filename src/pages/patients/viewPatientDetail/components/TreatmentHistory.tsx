@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
-import { Clock, User, Plus, Edit, Trash2, FileText } from 'lucide-react';
+import { Trash2, Edit, CheckCircle, Clock, User, Plus, FileText } from 'lucide-react';
+import { formatDate } from '@/utils/formatDate';
 import { useTreatments } from '../../../../hooks/useTreatments';
 import { TreatmentModal } from './TreatmentModal';
 import { EditTreatmentModal } from './EditTreatmentModal';
@@ -107,7 +109,7 @@ export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId })
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
                     <h4 className="font-medium text-gray-900">{treatment.procedure}</h4>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(treatment.status)}`}>
+                    <span className={`px - 2 py - 1 rounded - full text - xs font - medium ${getStatusColor(treatment.status)} `}>
                       {getStatusLabel(treatment.status)}
                     </span>
                   </div>
@@ -115,7 +117,7 @@ export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId })
                   <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600 mb-2">
                     <div className="flex items-center">
                       <Clock className="h-3 w-3 mr-1" />
-                      {new Date(treatment.date).toLocaleDateString('es-ES')}
+                      {formatDate(treatment.date)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
                     </div>
                     <div className="flex items-center">
                       <User className="h-3 w-3 mr-1" />

@@ -1,5 +1,7 @@
+
 import React from 'react';
-import { User, Mail, Phone, MapPin, Heart, Calendar } from 'lucide-react';
+import { User, Phone, Mail, Calendar, MapPin, Activity, FileText, Heart } from 'lucide-react';
+import { formatDate } from '@/utils/formatDate';
 import { Patient } from '../../../../hooks/usePatients';
 
 interface PatientInfoProps {
@@ -15,11 +17,10 @@ export const PatientInfo: React.FC<PatientInfoProps> = ({ patient }) => {
         </div>
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Información Personal</h2>
-          <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium mt-1 ${
-            patient.status === '1' 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-gray-100 text-gray-800'
-          }`}>
+          <span className={`inline - block px - 2 py - 1 rounded - full text - xs font - medium mt - 1 ${patient.status === '1'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-gray-100 text-gray-800'
+            } `}>
             {patient.status === '1' ? 'Activo' : 'Inactivo'}
           </span>
         </div>
@@ -30,19 +31,19 @@ export const PatientInfo: React.FC<PatientInfoProps> = ({ patient }) => {
           <Mail className="h-4 w-4 text-gray-400 mr-3" />
           <span className="text-sm text-gray-900">{patient.email}</span>
         </div>
-        
+
         <div className="flex items-center">
           <Phone className="h-4 w-4 text-gray-400 mr-3" />
           <span className="text-sm text-gray-900">{patient.phone}</span>
         </div>
-        
+
         <div className="flex items-center">
           <Calendar className="h-4 w-4 text-gray-400 mr-3" />
           <span className="text-sm text-gray-900">
-            {new Date(patient.birth_date).toLocaleDateString('es-ES')} ({patient.age} años)
+            {formatDate(patient.birth_date)} ({patient.age} años) {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
           </span>
         </div>
-        
+
         <div className="flex items-start">
           <MapPin className="h-4 w-4 text-gray-400 mr-3 mt-0.5" />
           <span className="text-sm text-gray-900">{patient.address}</span>

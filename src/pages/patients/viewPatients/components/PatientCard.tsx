@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { User, Phone, Mail, Calendar } from 'lucide-react';
+import { formatDate } from '@/utils/formatDate';
 import { Patient } from '@/hooks/usePatients';
 
 interface PatientCardProps {
@@ -10,7 +11,7 @@ interface PatientCardProps {
 export const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
 
   return (
-    <Link 
+    <Link
       to={`/patients/${patient.id}`}
       className="bg-white border border-gray-200 rounded-lg p-4 transition-all duration-200 hover:border-blue-300 group hover:bg-blue-50"
     >
@@ -24,11 +25,10 @@ export const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
             <p className="text-sm text-gray-600">{patient.age} años</p>
           </div>
         </div>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          patient.status === '1' 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-gray-100 text-gray-800'
-        }`}>
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${patient.status === '1'
+          ? 'bg-green-100 text-green-800'
+          : 'bg-gray-100 text-gray-800'
+          }`}>
           {patient.status === '1' ? 'Activo' : 'Inactivo'}
         </span>
       </div>
@@ -44,7 +44,7 @@ export const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
         </div>
         <div className="flex items-center text-sm text-gray-600">
           <Calendar className="h-3 w-3 mr-2" />
-          Registrado: {new Date(patient.created_date).toLocaleDateString('es-ES')}
+          Registrado: {formatDate(patient.created_date)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
         </div>
       </div>
 

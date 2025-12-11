@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatDate } from '@/utils/formatDate';
 import { Appointment, useAppointments } from '@hooks/useAppointments';
 import {
   timeSlots,
@@ -51,12 +52,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between sm:space-y-0 space-y-3 text-center sm:text-left">
         {/* Fecha */}
         <h3 className="text-lg sm:text-xl font-semibold text-gray-900 order-1 sm:order-none">
-          {new Date(selectedDate).toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            timeZone: 'UTC',
-          })}
+          {formatDate(selectedDate)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
         </h3>
 
         {/* Leyendas de estados */}

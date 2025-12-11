@@ -1,4 +1,6 @@
+
 import React, { useRef, useState } from 'react';
+import { formatDate } from '@/utils/formatDate';
 import { Odontogram, ToothCondition } from '@/types/odontogram';
 import { ToothSVG } from '@/components/odontogram/ToothSVG';
 import { UPPER_FDI, LOWER_FDI, UPPER_DECIDUOUS, LOWER_DECIDUOUS, TOOLBAR_TOOLS, CONDITIONS, SURFACE_CODES } from '@/constants/odontogram';
@@ -154,10 +156,10 @@ export const OdontogramPrintPreview: React.FC<OdontogramPrintPreviewProps> = ({
                                     {conditions.length > 0 ? conditions.map((c) => (
                                         <tr key={c.id} className="border-b last:border-0 hover:bg-gray-50">
                                             <td className="px-4 py-2 text-gray-600">
-                                                {c.created_date ? new Date(c.created_date).toLocaleDateString() : '-'}
+                                                {c.created_date ? formatDate(c.created_date) : '-'} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
                                             </td>
                                             <td className="px-4 py-2 font-medium">
-                                                {c.range_end_tooth ? `${c.tooth_number} - ${c.range_end_tooth}` : c.tooth_number}
+                                                {c.range_end_tooth ? `${c.tooth_number} - ${c.range_end_tooth} ` : c.tooth_number}
                                             </td>
                                             <td className="px-4 py-2 text-gray-600">
                                                 {SURFACE_CODES[c.surface] || c.surface}
