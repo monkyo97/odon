@@ -1,14 +1,15 @@
-
 import React, { useState } from 'react';
-import { Trash2, Edit, Clock, User, Plus, FileText } from 'lucide-react';
+import { Trash2, Edit, Clock, User, Plus, FileText, Copy } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
 import { useTreatments } from '../../../../hooks/useTreatments';
 import { TreatmentModal } from './TreatmentModal';
 import { EditTreatmentModal } from './EditTreatmentModal';
 import { TREATMENT_STATUSES, STATUS_LABELS } from '@/constants/odontogram';
+import { Notifications } from '@/components/Notifications';
 
 interface TreatmentHistoryProps {
   patientId: string;
+  defaultDentistId?: string;
 }
 
 export interface Treatment {
@@ -29,8 +30,8 @@ export interface Treatment {
   followUpDate?: string;
 }
 
-export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId }) => {
-  const { treatments, loading, createTreatment, updateTreatment, deleteTreatment } = useTreatments(patientId);
+export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId, defaultDentistId }) => {
+  const { treatments, loading, createTreatment, updateTreatment, deleteTreatment, duplicateTreatment } = useTreatments(patientId);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
@@ -39,9 +40,10 @@ export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId })
     try {
       await createTreatment(treatmentData);
       setIsModalOpen(false);
+      Notifications.success('Tratamiento creado exitosamente');
     } catch (error) {
       console.error('Error creating treatment:', error);
-      alert('Error al crear el tratamiento');
+      Notifications.error('Error al crear el tratamiento');
     }
   };
 
@@ -55,9 +57,10 @@ export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId })
       await updateTreatment(updatedTreatment.id, updatedTreatment);
       setIsEditModalOpen(false);
       setSelectedTreatment(null);
+      Notifications.success('Tratamiento actualizado');
     } catch (error) {
       console.error('Error updating treatment:', error);
-      alert('Error al actualizar el tratamiento');
+      Notifications.error('Error al actualizar el tratamiento');
     }
   };
 
@@ -65,20 +68,31 @@ export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId })
     if (window.confirm('¿Estás seguro de que deseas eliminar este tratamiento?')) {
       try {
         await deleteTreatment(treatmentId);
+        Notifications.success('Tratamiento eliminado');
       } catch (error) {
         console.error('Error deleting treatment:', error);
-        alert('Error al eliminar el tratamiento');
+        Notifications.error('Error al eliminar el tratamiento');
       }
+    }
+  };
+
+  const handleDuplicateTreatment = async (treatment: Treatment) => {
+    try {
+      await duplicateTreatment(treatment);
+      Notifications.success('Tratamiento duplicado correctamente');
+    } catch (error) {
+      console.error('Error duplicating treatment:', error);
+      Notifications.error('Error al duplicar tratamiento');
     }
   };
 
   const getStatusColor = (status: string) => {
     const colors = {
-      [TREATMENT_STATUSES.COMPLETED]: 'bg-green-100 text-green-800',
-      [TREATMENT_STATUSES.IN_PROGRESS]: 'bg-yellow-100 text-yellow-800',
-      [TREATMENT_STATUSES.PLANNED]: 'bg-blue-100 text-blue-800'
+      [TREATMENT_STATUSES.COMPLETED]: 'bg-green-100 text-green-800 border-green-200',
+      [TREATMENT_STATUSES.IN_PROGRESS]: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      [TREATMENT_STATUSES.PLANNED]: 'bg-blue-100 text-blue-800 border-blue-200'
     };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const getStatusLabel = (status: string) => {
@@ -107,87 +121,85 @@ export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId })
       </div>
 
       {treatments.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {treatments.map((treatment) => (
-            <div key={treatment.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h4 className="font-medium text-gray-900">{treatment.procedure}</h4>
-                    <span className={`px - 2 py - 1 rounded - full text - xs font - medium ${getStatusColor(treatment.status)} `}>
+            <div key={treatment.id} className="bg-white rounded-lg p-3 border border-gray-200 hover:shadow-md transition-shadow group">
+              <div className="flex items-start justify-between gap-4">
+                {/* Left Section: Main Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(treatment.status)}`}>
                       {getStatusLabel(treatment.status)}
+                    </span>
+                    <h4 className="font-semibold text-gray-900 truncate" title={treatment.procedure}>{treatment.procedure}</h4>
+                    <span className="text-gray-300">|</span>
+                    <span className="text-sm text-gray-600 flex items-center">
+                      <Clock className="h-3 w-3 mr-1" /> {formatDate(treatment.date)}
                     </span>
                   </div>
 
-                  <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600 mb-2">
-                    <div className="flex items-center">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {formatDate(treatment.date)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
-                    </div>
-                    <div className="flex items-center">
-                      <User className="h-3 w-3 mr-1" />
+                  <div className="flex items-center gap-4 text-sm text-gray-500 mb-1">
+                    {(treatment.toothNumber && treatment.toothNumber !== 'General') && (
+                      <div className="flex items-center bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+                        <span className="font-medium text-gray-700">Diente {treatment.toothNumber}</span>
+                        {treatment.surface && <span className="ml-1 text-gray-500">({treatment.surface})</span>}
+                      </div>
+                    )}
+
+                    <div className="flex items-center" title="Dentista asignado">
+                      <User className="h-3.5 w-3.5 mr-1" />
                       {treatment.dentist}
                     </div>
                   </div>
 
-                  {treatment.toothNumber && treatment.toothNumber !== 'General' && (
-                    <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
-                      <div>
-                        <span className="text-gray-500">Pieza dental:</span>
-                        <span className="ml-2 font-medium text-gray-900">{treatment.toothNumber}</span>
-                      </div>
-                      {treatment.surface && (
-                        <div>
-                          <span className="text-gray-500">Superficie:</span>
-                          <span className="ml-2 font-medium text-gray-900">{treatment.surface}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   {treatment.notes && (
-                    <div className="bg-white p-3 rounded border border-gray-100 mb-2">
-                      <div className="flex items-start">
-                        <FileText className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                        <p className="text-sm text-gray-700">{treatment.notes}</p>
-                      </div>
-                    </div>
+                    <p className="text-sm text-gray-600 truncate mt-1 pl-1 border-l-2 border-gray-200">
+                      {treatment.notes}
+                    </p>
                   )}
                 </div>
 
-                <div className="flex items-center space-x-2 ml-4">
-                  <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded">
-                    {treatment.cost > 0 ? `${treatment.cost}€` : 'Sin costo'}
+                {/* Right Section: Cost & Actions */}
+                <div className="flex flex-col items-end gap-2">
+                  <span className="font-semibold text-gray-900 text-lg">
+                    {treatment.cost > 0 ? `S/ ${treatment.cost.toFixed(2)}` : 'S/ 0.00'}
                   </span>
-                </div>
-              </div>
 
-              <div className="flex justify-end space-x-2 pt-2 border-t border-gray-200">
-                <button
-                  onClick={() => handleEditTreatment(treatment)}
-                  className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors"
-                >
-                  <Edit className="h-3 w-3 mr-1" />
-                  Editar
-                </button>
-                <button
-                  onClick={() => handleDeleteTreatment(treatment.id)}
-                  className="flex items-center text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 className="h-3 w-3 mr-1" />
-                  Eliminar
-                </button>
+                  <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => handleDuplicateTreatment(treatment)}
+                      className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                      title="Duplicar tratamiento"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleEditTreatment(treatment)}
+                      className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                      title="Editar"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTreatment(treatment.id)}
+                      className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      title="Eliminar"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+          <FileText className="h-10 w-10 text-gray-400 mx-auto mb-3" />
           <p className="text-gray-500 mb-4">No hay tratamientos registrados</p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="text-blue-600 hover:text-blue-800 font-medium"
+            className="text-blue-600 hover:text-blue-800 font-medium text-sm"
           >
             Agregar primer tratamiento
           </button>
@@ -199,6 +211,7 @@ export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId })
         onClose={() => setIsModalOpen(false)}
         patientId={patientId}
         onSave={handleCreateTreatment}
+        defaultDentistId={defaultDentistId}
       />
 
       <EditTreatmentModal

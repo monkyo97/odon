@@ -10,20 +10,27 @@ import { Loader2, History, Plus, Menu, X, ArrowLeft, CheckCircle, FileText, Edit
 
 import { Notifications } from '@/components/Notifications';
 import { OdontogramHistoryPanel } from './OdontogramHistoryPanel';
-import { generateOdontogramPDF } from '@/utils/pdfGenerator';
 import { OdontogramPrintPreview } from './OdontogramPrintPreview';
 import { useTreatments } from '@/hooks/useTreatments';
-import { useAuth } from '@/contexts/AuthContext';
 import { useDentists } from '@/hooks/useDentists';
+import { TreatmentModal } from '../TreatmentModal';
+import type { Treatment } from '../TreatmentHistory';
 
 interface OdontogramProps {
   patientId: string;
   patientName: string;
   patientEmail?: string;
   patientPhone?: string;
+  defaultDentistId?: string;
 }
 
-export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, patientEmail, patientPhone }) => {
+export const Odontogram: React.FC<OdontogramProps> = ({
+  patientId,
+  patientName,
+  patientEmail,
+  patientPhone,
+  defaultDentistId
+}) => {
   /* State */
   const [selectedTool, setSelectedTool] = useState<ToothConditionType | null>(null);
   const [saving, setSaving] = useState(false);
@@ -39,6 +46,8 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
   // Inline Editing State
   const [editingConditionId, setEditingConditionId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{ notes: string; cost: number }>({ notes: '', cost: 0 });
+  const [isTreatmentModalOpen, setIsTreatmentModalOpen] = useState(false);
+  const [treatmentInitialData, setTreatmentInitialData] = useState<Partial<Treatment> | undefined>(undefined);
 
   /* Data Hook */
   const {
@@ -52,45 +61,35 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
   } = useOdontogram(patientId, selectedHistoryId);
 
   const { createTreatment } = useTreatments(patientId);
-  const { user } = useAuth();
   const { dentists } = useDentists();
 
   // Derived state to check if we are viewing history (not the latest one)
   const isHistoryMode = selectedHistoryId !== undefined && selectedHistoryId !== latestOdontogram?.id;
 
-  const handleConvertToTreatment = async (condition: any) => {
+  const handleConvertToTreatment = (condition: any) => {
+    // Open Modal with pre-filled data
+    setTreatmentInitialData({
+      toothNumber: condition.tooth_number.toString(),
+      procedure: 'OTROS', // Requirement: "El campo Procedimiento debe cargarse automáticamente con el valor: OTROS"
+      surface: condition.surface !== 'whole' ? condition.surface : '',
+      // Use defaultDentistId if available, fall back to first dentist
+      dentistId: defaultDentistId || (dentists.length > 0 ? dentists[0].id : undefined),
+      notes: `Generado desde Odontograma: ${TOOLBAR_TOOLS.find(t => t.id === condition.condition_type)?.label || condition.condition_type}. ${condition.notes || ''}`,
+      cost: condition.cost || 0,
+      date: new Date().toISOString().split('T')[0],
+      status: 'planned'
+    });
+    setIsTreatmentModalOpen(true);
+  };
+
+  const handleSaveTreatment = async (treatmentData: Omit<Treatment, 'id' | 'dentist'> & { dentistId?: string }) => {
     try {
-      // Find a default dentist: either match current user or pick first
-      const defaultDentistId = dentists.length > 0 ? dentists[0].id : undefined;
-
-      await createTreatment({
-        patientId,
-        toothNumber: condition.tooth_number,
-        procedure: condition.condition_type,
-        surface: condition.surface,
-        dentistId: defaultDentistId,
-        notes: `Generado desde Odontograma. ${condition.notes || ''}`,
-        cost: condition.cost || 0,
-        date: new Date().toISOString().split('T')[0],
-        status: 'planned' // When moving from odontogram to treatment, usually planned
-      });
-
-      // Update condition to reflect status change if needed (e.g. status_tooth_conditions)
-      // For now, we just save the same condition to trigger any updates if logic requires
-      await saveCondition.mutateAsync({
-        odontogramId: currentOdontogram!.id,
-        toothNumber: condition.tooth_number,
-        surface: condition.surface,
-        condition: condition.condition_type,
-        rangeEndTooth: condition.range_end_tooth,
-        notes: condition.notes,
-        cost: condition.cost
-      });
-
+      await createTreatment(treatmentData);
+      setIsTreatmentModalOpen(false);
       Notifications.success('Tratamiento realizado y registrado en historial');
     } catch (error) {
       console.error(error);
-      Notifications.error('Error al convertir a tratamiento');
+      Notifications.error('Error al guardar tratamiento');
     }
   };
 
@@ -672,6 +671,14 @@ export const Odontogram: React.FC<OdontogramProps> = ({ patientId, patientName, 
           onClose={() => setShowPrintPreview(false)}
         />
       )}
+
+      <TreatmentModal
+        isOpen={isTreatmentModalOpen}
+        onClose={() => setIsTreatmentModalOpen(false)}
+        patientId={patientId}
+        onSave={handleSaveTreatment}
+        initialData={treatmentInitialData}
+      />
 
     </div>
   );

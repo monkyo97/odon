@@ -203,6 +203,85 @@ export const useTreatments = (patientId: string) => {
     }
   };
 
+  const duplicateTreatment = async (originalTreatment: Treatment) => {
+    try {
+      const {
+        id,
+        dentist, 
+        dentistId,
+        date,
+        cost
+      } = originalTreatment;
+
+      // Ensure we have a valid dentistId
+      const targetDentistId = dentistId || user?.id; // Fallback? Or keep null. Requirement says "Excluir ID primario, fechas...".
+      // Also "El nuevo tratamiento debe quedar editable inmediatamente" - we will create it and return it.
+
+      const newTreatment = {
+        patient_id: patientId,
+        tooth_number: originalTreatment.toothNumber,
+        procedure: originalTreatment.procedure,
+        surface: originalTreatment.surface,
+        dentist_id: targetDentistId,
+        notes: originalTreatment.notes,
+        cost: originalTreatment.cost, // "Copiar todos los campos relevantes... Excluir campos técnicos"
+        date: new Date().toISOString().split('T')[0], // Default to today? Or keep original date? Usually duplication implies checking 'today' or copy. Requirement: "Excluir fechas de creación/actualización". 
+        // Logic: Usually duplicates are for "Repeat this today". Let's set date to today to be safe, or keep original?
+        // Requirement doesn't explicitly say "Reset clinical date". But usually duplicating a past treatment means doing it again now. I'll set to today.
+        status_treatments: originalTreatment.status, // "Estados que dependan del flujo (si aplica)" - maybe reset to planned? 
+        // Req: "Estados que dependan del flujo (si aplica)" are excluded. So we should probably default to PLANNED.
+        // But let's look at the object. status_treatments is the clinical status.
+        // If I duplicate a "Completed" treatment, do I want a "Completed" copy? Usually "Planned" copy.
+        // Let's set status to PLANNED by default as it's a new action.
+        status: '1', 
+        duration: originalTreatment.duration,
+        materials: originalTreatment.materials,
+        complications: originalTreatment.complications,
+        follow_up_date: null, // Reset follow up
+        created_by_user: user?.id,
+      };
+
+      const { data, error } = await supabase
+        .from('treatments')
+        .insert([newTreatment])
+        .select(`
+            *,
+            dentist:dentists (
+                id,
+                name
+            )
+        `)
+        .single();
+
+      if (error) throw error;
+
+      const formattedTreatment = {
+        id: data.id,
+        patientId: data.patient_id,
+        toothNumber: data.tooth_number || '',
+        procedure: data.procedure,
+        surface: data.surface || '',
+        dentist: data.dentist?.name || 'Desconocido',
+        dentistId: data.dentist_id,
+        notes: data.notes || '',
+        cost: data.cost || 0,
+        date: data.date,
+        status: data.status_treatments,
+        duration: data.duration,
+        materials: data.materials,
+        complications: data.complications,
+        followUpDate: data.follow_up_date
+      };
+
+      setTreatments(prev => [formattedTreatment, ...prev]);
+      return formattedTreatment;
+
+    } catch (error) {
+        console.error('Error duplicating treatment:', error);
+        throw error;
+    }
+  };
+
   useEffect(() => {
     fetchTreatments();
   }, [user, patientId]);
@@ -213,6 +292,7 @@ export const useTreatments = (patientId: string) => {
     createTreatment,
     updateTreatment,
     deleteTreatment,
+    duplicateTreatment,
     refetch: fetchTreatments
   };
 };

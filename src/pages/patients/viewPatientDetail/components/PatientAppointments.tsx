@@ -9,9 +9,10 @@ import { Notifications } from '@/components/Notifications';
 
 interface PatientAppointmentsProps {
   patientId: string;
+  defaultDentistId?: string;
 }
 
-export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patientId }) => {
+export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patientId, defaultDentistId }) => {
   // 🧠 Usamos el hook filtrado por patientId
   const { appointments, loading, createAppointment, updateAppointment, deleteAppointment } = useAppointments(1, patientId);
 
@@ -173,6 +174,7 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
         onSave={handleSave}
         appointmentToEdit={appointmentToEdit}
         preselectedPatientId={patientId}
+        defaultDentistId={defaultDentistId}
       />
 
       <ConfirmModal

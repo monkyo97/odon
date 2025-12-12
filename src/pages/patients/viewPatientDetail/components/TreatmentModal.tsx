@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, FileText, DollarSign, Clock, User } from 'lucide-react';
-import { useAuth } from '../../../../contexts/AuthContext';
+
 import { useDentists } from '../../../../hooks/useDentists';
+import { useTreatmentCatalog } from '@/hooks/useTreatmentCatalog';
 import type { Treatment } from './TreatmentHistory';
 import { TREATMENT_STATUSES, STATUS_LABELS, SURFACE_IDS } from '@/constants/odontogram';
 
@@ -10,16 +11,21 @@ interface TreatmentModalProps {
   onClose: () => void;
   patientId: string;
   onSave: (treatmentData: Omit<Treatment, 'id' | 'dentist'> & { dentistId?: string }) => Promise<void>;
+  initialData?: Partial<Treatment>; // To pre-fill from Odontogram
+  defaultDentistId?: string; // Explicit default
 }
 
 export const TreatmentModal: React.FC<TreatmentModalProps> = ({
   isOpen,
   onClose,
   patientId,
-  onSave
+  onSave,
+  initialData,
+  defaultDentistId
 }) => {
-  const { user } = useAuth();
-  const { dentists } = useDentists(); // Fetch dentists
+  const { dentists } = useDentists();
+  const { catalog, getCostForTreatment, loading: loadingCatalog } = useTreatmentCatalog();
+
   const [formData, setFormData] = useState({
     toothNumber: '',
     procedure: '',
@@ -36,15 +42,76 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Set default dentist when dentists are loaded
+  // Initialize form with initialData or defaults when opening
   useEffect(() => {
-    if (dentists.length > 0 && !formData.dentistId) {
-      // Try to find a dentist that matches the current user if possible, otherwise pick the first one
-      // Assuming dentist might have an email or user_id link, but here we just pick the first one for simplicity or user preference
-      // If the requirement says "search for an existing dentist... and get the id", we can just default to the first one.
+    if (isOpen) {
+      if (initialData) {
+        setFormData(prev => ({
+          ...prev,
+          toothNumber: initialData.toothNumber || '',
+          procedure: initialData.procedure || '',
+          surface: initialData.surface || '',
+          notes: initialData.notes || '',
+          cost: initialData.cost ? initialData.cost.toString() : '',
+          // Priority: initialData > defaultDentistId
+          dentistId: initialData.dentistId || defaultDentistId || '',
+          date: initialData.date || new Date().toISOString().split('T')[0],
+          status: (initialData.status as any) || TREATMENT_STATUSES.PLANNED,
+        }));
+      } else {
+        // Reset if no initial data (clean slate) - Use defaultDentistId
+        setFormData({
+          toothNumber: '',
+          procedure: '',
+          surface: '',
+          notes: '',
+          cost: '',
+          date: new Date().toISOString().split('T')[0],
+          status: TREATMENT_STATUSES.PLANNED,
+          duration: '',
+          materials: '',
+          complications: '',
+          followUpDate: '',
+          dentistId: defaultDentistId || ''
+        });
+      }
+    }
+  }, [isOpen, initialData, defaultDentistId]);
+
+  // Set default dentist when dentists are loaded (fallback if still empty)
+  useEffect(() => {
+    if (dentists.length > 0 && !formData.dentistId && !initialData?.dentistId && !defaultDentistId) {
       setFormData(prev => ({ ...prev, dentistId: dentists[0].id }));
     }
-  }, [dentists]);
+  }, [dentists, formData.dentistId, initialData, defaultDentistId]);
+
+  // Update cost when procedure changes
+  useEffect(() => {
+    // Only auto-update cost if user hasn't typed a cost manually?
+    // Requirement: "Al crear un tratamiento nuevo: El costo configurado debe cargarse automáticamente."
+    // If we are opening with initialData (e.g. from Odontogram), cost might be 0 or set.
+    // If user *changes* procedure, we should update cost.
+    if (formData.procedure && catalog.length > 0) {
+      // Check if the current cost matches the initial/previous procedure cost or is empty?
+      // Simplest behavior: IF procedure changes, update cost.
+      // We need to know if this useEffect is triggered by user change or initial load.
+      // For now, let's just update cost if the field is empty or if we want to force it.
+      // Better UX: Update cost only if it's empty OR if the user explicitly changed the procedure dropdown.
+      // To track "user changed", we could use the onChange handler directly instead of useEffect.
+      // I will move cost update logic to onChange handler.
+    }
+  }, [formData.procedure]);
+  // Commented out to move logic to onChange
+
+  const handleProcedureChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newProcedure = e.target.value;
+    const defaultCost = getCostForTreatment(newProcedure);
+    setFormData(prev => ({
+      ...prev,
+      procedure: newProcedure,
+      cost: defaultCost > 0 ? defaultCost.toString() : prev.cost // Update cost if we found a default
+    }));
+  };
 
   if (!isOpen) return null;
 
@@ -68,21 +135,6 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
         complications: formData.complications,
         followUpDate: formData.followUpDate || undefined
       });
-
-      setFormData({
-        toothNumber: '',
-        procedure: '',
-        surface: '',
-        notes: '',
-        cost: '',
-        date: new Date().toISOString().split('T')[0],
-        status: TREATMENT_STATUSES.PLANNED,
-        duration: '',
-        materials: '',
-        complications: '',
-        followUpDate: '',
-        dentistId: ''
-      });
       onClose(); // Close on success
     } catch (error) {
       console.error('Error creating treatment:', error);
@@ -90,26 +142,6 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
       setIsSubmitting(false);
     }
   };
-
-  const procedures = [
-    'Consulta inicial',
-    'Limpieza dental',
-    'Empaste/Restauración',
-    'Endodoncia',
-    'Extracción simple',
-    'Extracción quirúrgica',
-    'Corona dental',
-    'Implante dental',
-    'Blanqueamiento',
-    'Ortodoncia',
-    'Cirugía periodontal',
-    'Radiografía',
-    'Fluorización',
-    'Sellado de fisuras',
-    'Prótesis parcial',
-    'Prótesis completa',
-    'Otro'
-  ];
 
   const surfaces = [
     { value: '', label: 'No aplica' },
@@ -143,13 +175,14 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
               </label>
               <select
                 value={formData.procedure}
-                onChange={(e) => setFormData({ ...formData, procedure: e.target.value })}
+                onChange={handleProcedureChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
+                disabled={loadingCatalog}
               >
                 <option value="">Seleccionar procedimiento</option>
-                {procedures.map((procedure) => (
-                  <option key={procedure} value={procedure}>{procedure}</option>
+                {catalog.map((item) => (
+                  <option key={item.id} value={item.name}>{item.name}</option>
                 ))}
               </select>
             </div>

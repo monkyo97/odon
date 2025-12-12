@@ -57,6 +57,7 @@ interface AppointmentModalProps {
   defaultTime?: string;
   appointmentToEdit?: Appointment | null;
   preselectedPatientId?: string;
+  defaultDentistId?: string;
 }
 
 export const AppointmentModal: React.FC<AppointmentModalProps> = ({
@@ -67,6 +68,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   defaultTime,
   appointmentToEdit,
   preselectedPatientId,
+  defaultDentistId
 }) => {
   const { patients } = usePatients();
   const { dentists, loading: loadingDentists } = useDentists();
@@ -121,6 +123,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         }
         setValue('date', defaultDate || '');
         setValue('time', defaultTime || '');
+        if (defaultDentistId) {
+          setValue('dentist_id', defaultDentistId);
+        }
         setValue('status_appointments', 'scheduled');
       } else {
         // Modo Nuevo (Reset)
@@ -130,12 +135,13 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
           status_appointments: 'scheduled',
           date: defaultDate || '',
           time: defaultTime || '',
+          dentist_id: defaultDentistId || ''
         });
         setIsNewPatient(true);
         setSearchTerm('');
       }
     }
-  }, [isOpen, appointmentToEdit, preselectedPatientId, patients, defaultDate, defaultTime, reset, setValue]);
+  }, [isOpen, appointmentToEdit, preselectedPatientId, patients, defaultDate, defaultTime, reset, setValue, defaultDentistId]);
 
 
   if (!isOpen) return null;
