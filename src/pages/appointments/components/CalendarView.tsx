@@ -45,14 +45,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     });
   };
 
+  const formatGroupDate = (dateStr: string) => {
+    // Format: "Lunes 23 de Diciembre"
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  };
   return (
     <div className="space-y-4">
       {/* 🔹 Header */}
       {/* 🔹 Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between sm:space-y-0 space-y-3 text-center sm:text-left">
         {/* Fecha */}
-        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 order-1 sm:order-none">
-          {formatDate(selectedDate)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 order-1 sm:order-none uppercase">
+          {formatGroupDate(selectedDate)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
         </h3>
 
         {/* Leyendas de estados */}
