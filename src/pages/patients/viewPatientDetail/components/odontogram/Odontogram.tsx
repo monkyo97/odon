@@ -362,64 +362,67 @@ export const Odontogram: React.FC<OdontogramProps> = ({
   return (
     <div className="relative flex flex-col h-[calc(100vh-200px)]">
       {/* Header with Hamburger */}
-      <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-xl border shadow-sm">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4 mb-4 bg-white p-4 rounded-xl border shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
 
-          {!isHistoryPanelOpen && (
-            <button
-              onClick={() => {
-                if (isHistoryPanelOpen) setIsHistoryPanelOpen(false); // Close history if opening tools
-                setIsSidebarOpen(!isSidebarOpen);
-              }}
-              className={`p-2 rounded-lg transition-colors ${isSidebarOpen ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}
-              title={isSidebarOpen ? "Cerrar herramientas" : "Abrir herramientas"}
-            >
-              {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          )}
-          {isHistoryPanelOpen && <div className="w-10"></div>}
-          <div>
-            <div className="flex items-center gap-4">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                Odontogram
-                {isHistoryMode && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full border border-orange-200">Modo Historial</span>}
-              </h2>
-              {/* Review Mode Toggle */}
-              <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
-                <button
-                  className={`text-xs font-medium px-2 py-1 rounded cursor-pointer transition ${!isReviewMode ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                  onClick={() => setIsReviewMode(false)}
-                >
-                  Visualizar
-                </button>
-                <button
-                  className={`text-xs font-medium px-2 py-1 rounded cursor-pointer transition ${isReviewMode ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                  onClick={() => setIsReviewMode(true)}
-                >
-                  Revisar
-                </button>
+          <div className="flex items-center gap-4">
+            {!isHistoryPanelOpen && (
+              <button
+                onClick={() => {
+                  if (isHistoryPanelOpen) setIsHistoryPanelOpen(false); // Close history if opening tools
+                  setIsSidebarOpen(!isSidebarOpen);
+                }}
+                className={`p-2 rounded-lg transition-colors flex-shrink-0 ${isSidebarOpen ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}
+                title={isSidebarOpen ? "Cerrar herramientas" : "Abrir herramientas"}
+              >
+                {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            )}
+            {isHistoryPanelOpen && <div className="w-10 hidden sm:block"></div>}
+
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  Odontogram
+                  {isHistoryMode && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full border border-orange-200 whitespace-nowrap">Modo Historial</span>}
+                </h2>
+                {/* Review Mode Toggle */}
+                <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                  <button
+                    className={`text-xs font-medium px-2 py-1 rounded cursor-pointer transition ${!isReviewMode ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    onClick={() => setIsReviewMode(false)}
+                  >
+                    Visualizar
+                  </button>
+                  <button
+                    className={`text-xs font-medium px-2 py-1 rounded cursor-pointer transition ${isReviewMode ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    onClick={() => setIsReviewMode(true)}
+                  >
+                    Revisar
+                  </button>
+                </div>
               </div>
+              <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+                {(() => {
+                  const sortedOdontograms = [...(odontograms || [])].sort((a, b) =>
+                    new Date(a.date).getTime() - new Date(b.date).getTime()
+                  );
+
+                  const firstDate = sortedOdontograms.length > 0 ? formatDate(sortedOdontograms[0].date) : '-';
+                  const lastEvolution = currentOdontogram?.name ? currentOdontogram.name : '-';
+
+                  const displayString = currentOdontogram
+                    ? `Inicial: ${firstDate} - ${lastEvolution}`
+                    : 'Nuevo Odontograma';
+
+                  return currentOdontogram ? displayString : 'Sin odontograma registrado';
+                })()}
+              </p>
             </div>
-            <p className="text-sm text-gray-500">
-              {(() => {
-                const sortedOdontograms = [...(odontograms || [])].sort((a, b) =>
-                  new Date(a.date).getTime() - new Date(b.date).getTime()
-                );
-
-                const firstDate = sortedOdontograms.length > 0 ? formatDate(sortedOdontograms[0].date) : '-';
-                const lastEvolution = currentOdontogram?.name ? currentOdontogram.name : '-';
-
-                const displayString = currentOdontogram
-                  ? `Inicial: ${firstDate} - ${lastEvolution}`
-                  : 'Nuevo Odontograma';
-
-                return currentOdontogram ? displayString : 'Sin odontograma registrado';
-              })()}
-            </p>
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 pt-2 border-t lg:border-none lg:pt-0">
 
           {/* Volver button (only in history mode) */}
           {isHistoryMode && (
@@ -427,7 +430,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({
               onClick={() => {
                 setSelectedHistoryId(undefined);
               }}
-              className="flex items-center px-4 py-2 bg-white border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition"
+              className="flex items-center px-4 py-2 bg-white border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition text-sm whitespace-nowrap"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver a Actual
@@ -441,7 +444,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({
                 if (isSidebarOpen) setIsSidebarOpen(false); // Close tools
                 setIsHistoryPanelOpen(!isHistoryPanelOpen);
               }}
-              className={`flex items-center px-4 py-2 border rounded-lg transition ${isHistoryPanelOpen ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+              className={`flex items-center px-4 py-2 border rounded-lg transition text-sm whitespace-nowrap ${isHistoryPanelOpen ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
             >
               <History className="h-4 w-4 mr-2" />
               Historial
@@ -452,7 +455,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({
             <button
               onClick={handleCreateVersion}
               disabled={saving}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm whitespace-nowrap"
             >
               <Plus className="h-4 w-4 mr-2" />
               Crear Inicial
@@ -464,7 +467,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({
             <button
               onClick={handleCreateVersion}
               disabled={saving}
-              className="flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+              className="flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 text-sm whitespace-nowrap"
             >
               <Plus className="h-4 w-4 mr-2" />
               Nueva Versión

@@ -104,41 +104,49 @@ export const PatientDetail: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => setShowInfo(!showInfo)}
-            className={`p-2 rounded-lg border transition-colors flex items-center justify-center ${showInfo ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-              }`}
-            title={showInfo ? "Ocultar información" : "Ver información"}
-          >
-            {showInfo ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-          </button>
+      <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        {/* Left Side: Info & Dentist */}
+        <div className="flex flex-col md:flex-row md:items-center gap-4 flex-1">
+          <div className="flex items-start gap-4">
+            <button
+              onClick={() => setShowInfo(!showInfo)}
+              className={`flex-shrink-0 p-2 rounded-lg border transition-colors ${showInfo
+                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                }`}
+              title={showInfo ? "Ocultar información" : "Ver información"}
+            >
+              {showInfo ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
 
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
-            <p className="text-gray-600">{patient.age} años • Registrado: {formatDate(patient.created_date)}</p>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight">
+                {patient.name}
+              </h1>
+              <p className="text-sm text-gray-600 mt-1">
+                {patient.age} años • Registrado: {formatDate(patient.created_date)}
+              </p>
+            </div>
           </div>
 
-          {/* Global Dentist Selector */}
-          <div className="ml-4 min-w-[250px]">
+          <div className="w-full md:w-auto md:min-w-[250px]">
             <FormSelect
-              label="Odontólogo:"
+              label="Odontólogo Responsable"
               options={dentistOptions}
               value={activeDentistId || ''}
               onChange={(e) => setActiveDentistId(e.target.value || undefined)}
-              placeholder="-- Seleccionar Odontólogo --"
+              placeholder="-- Seleccionar --"
               showEmptyOption={true}
-            // Custom styling to match previous look if needed, or rely on FormSelect defaults
-            // FormSelect already has label support.
+              className="mb-0" // Remove default margin if present
             />
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        {/* Right Side: Actions */}
+        <div className="flex items-center justify-end gap-3 pt-2 md:pt-0 border-t md:border-none border-gray-100">
           <button
             onClick={() => setIsEditModalOpen(true)}
-            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
           >
             <Edit className="h-4 w-4 mr-2" />
             Editar
@@ -146,7 +154,7 @@ export const PatientDetail: React.FC = () => {
 
           <button
             onClick={handleBack}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-transparent hover:border-gray-200"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
             title="Volver"
           >
             <ArrowLeft className="h-5 w-5" />

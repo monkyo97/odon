@@ -3,6 +3,7 @@ import { X, Save, FileText, DollarSign, Clock, User } from 'lucide-react';
 import { useDentists } from '../../../../hooks/useDentists';
 import type { Treatment } from './TreatmentHistory';
 import { TREATMENT_STATUSES, STATUS_LABELS, SURFACE_IDS } from '@/constants/odontogram';
+import { FormDateInput } from '@/components/FormDateInput';
 
 interface EditTreatmentModalProps {
   isOpen: boolean;
@@ -210,14 +211,10 @@ export const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fecha *
-              </label>
-              <input
-                type="date"
+              <FormDateInput
+                label="Fecha *"
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
@@ -258,14 +255,10 @@ export const EditTreatmentModal: React.FC<EditTreatmentModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fecha Seguimiento
-              </label>
-              <input
-                type="date"
+              <FormDateInput
+                label="Fecha Seguimiento"
                 value={formData.followUpDate}
                 onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
