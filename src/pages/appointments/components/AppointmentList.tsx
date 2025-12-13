@@ -198,7 +198,10 @@ export const AppointmentList: React.FC<AppointmentListProps> = () => {
         // Setup Global Context Logic
         // We pass the dentist_id in state so PatientDetail can pick it up
         navigate(`/patients/${appointment.patient_id}`, {
-            state: { defaultDentistId: appointment.dentist_id }
+            state: {
+                defaultDentistId: appointment.dentist_id,
+                from: '/appointments' // Mark origin
+            }
         });
     };
 
@@ -344,8 +347,8 @@ export const AppointmentList: React.FC<AppointmentListProps> = () => {
                             confirmAction.type === 'complete' ? 'Completar Cita' : 'Reactivar Cita'
                 }
                 message={`¿Estás seguro de que deseas ${confirmAction.type === 'cancel' ? 'cancelar' :
-                        confirmAction.type === 'confirm' ? 'confirmar' :
-                            confirmAction.type === 'complete' ? 'marcar como completada' : 'reactivar'
+                    confirmAction.type === 'confirm' ? 'confirmar' :
+                        confirmAction.type === 'complete' ? 'marcar como completada' : 'reactivar'
                     } la cita de ${confirmAction.appointment?.patient_name}?`}
                 confirmText="Proceder"
                 cancelText="Volver"

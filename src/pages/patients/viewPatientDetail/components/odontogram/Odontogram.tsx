@@ -144,17 +144,77 @@ export const Odontogram: React.FC<OdontogramProps> = ({
 
     // Check if tooth is blocked (Missing/Extraction)
     const toothConditions = conditions.filter(c => c.tooth_number === toothNumber);
-    const isBlocked = toothConditions.some(c => c.condition_type === CONDITIONS.MISSING || c.condition_type === CONDITIONS.EXTRACTION_PLANNED);
+    const existingBlockingCondition = toothConditions.find(c =>
+      c.condition_type === CONDITIONS.MISSING ||
+      c.condition_type === CONDITIONS.EXTRACTION_PLANNED
+    );
+    const isBlocked = !!existingBlockingCondition;
 
     // Allow if tool is 'healthy' (to fix) or 'missing'/'extraction' (to toggle/update)
     const isControlTool = selectedTool === CONDITIONS.HEALTHY || selectedTool === CONDITIONS.MISSING || selectedTool === CONDITIONS.EXTRACTION_PLANNED;
 
     if (isBlocked && !isControlTool) {
-      Notifications.warning('El diente está ausente o planificado para extracción. No se pueden agregar condiciones superficiales.');
+      Notifications.warning('El diente está ausente o planificado para extracción. Elimina esta condición con "Sano/Borrar" para editar.');
       return;
     }
 
-    // Handle Range Tools
+    // Helper to determine center surface
+    const getCenterSurface = (tNumber: number): Surface => {
+      const isIncisal =
+        (tNumber >= 11 && tNumber <= 23) ||
+        (tNumber >= 31 && tNumber <= 43) ||
+        (tNumber >= 51 && tNumber <= 53) ||
+        (tNumber >= 61 && tNumber <= 63) ||
+        (tNumber >= 71 && tNumber <= 73) ||
+        (tNumber >= 81 && tNumber <= 83);
+      return isIncisal ? 'incisal' : 'occlusal';
+    };
+
+    // --- LOGIC 1: Handle Missing/Extraction (Always Center/Whole) ---
+    if (selectedTool === CONDITIONS.MISSING || selectedTool === CONDITIONS.EXTRACTION_PLANNED) {
+      // User Req: "la marca se seleccionará en el centro del diente siempre => Oclusal/Incisal"
+      const targetSurface = getCenterSurface(toothNumber);
+
+      try {
+        await saveCondition.mutateAsync({
+          odontogramId: latestOdontogram.id,
+          toothNumber,
+          surface: targetSurface, // Force center
+          condition: selectedTool,
+          cost: 0
+        });
+      } catch (error) {
+        console.error(error);
+        Notifications.error('Error al guardar condición');
+      }
+      return;
+    }
+
+    // --- LOGIC 2: Handle Healthy (Eraser) on Blocked Tooth ---
+    if (selectedTool === CONDITIONS.HEALTHY && isBlocked) {
+      // User Req: "si selecciono sano (borrar)... solo se quita 'a extraer' o 'ausente' como primero a eliminar"
+      // We need to apply 'healthy' explicitly to the surface where the blocking condition exists.
+      // Usually we enforce Center now, but check where it is.
+      if (existingBlockingCondition) {
+        try {
+          // Overwrite the blocking condition with HEALTHY (effectively deleting it in our append-logic or updating it)
+          await saveCondition.mutateAsync({
+            odontogramId: latestOdontogram.id,
+            toothNumber,
+            surface: existingBlockingCondition.surface, // Target the exact surface of the blocking condition
+            condition: CONDITIONS.HEALTHY,
+            cost: 0
+          });
+          Notifications.success('Condición eliminada. Diente habilitado.');
+        } catch (error) {
+          console.error(error);
+          Notifications.error('Error al desbloquear diente');
+        }
+        return;
+      }
+    }
+
+    // --- LOGIC 3: Range Tools ---
     const isRangeTool = ([CONDITIONS.ORTHODONTICS, CONDITIONS.BRIDGE, CONDITIONS.PROSTHESIS] as string[]).includes(selectedTool || '');
 
     // Range Deletion Logic: Only check if NOT currently selecting a range
@@ -234,12 +294,6 @@ export const Odontogram: React.FC<OdontogramProps> = ({
 
     // Normal Single Tooth Condition
     try {
-      // If setting a WHOLE condition (Missing, Crown, Extraction), we might want to clear previous SURFACES?
-      // User requested: "Borra cualquier superficie previa (opcional)"
-      // Let's effectively just Add. 
-      // But if user sets 'missing', existing surface paintings remain in DB but are visually hidden by the X.
-      // This is non-destructive and safer.
-
       await saveCondition.mutateAsync({
         odontogramId: latestOdontogram.id,
         toothNumber,

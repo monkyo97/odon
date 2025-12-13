@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { formatDate } from '@/utils/formatDate';
 import { ArrowLeft, Edit, Calendar, FileText, Bluetooth as Tooth, Trash2, Info, ChevronUp, ChevronDown, User } from 'lucide-react';
 import { Odontogram } from './components/odontogram/Odontogram';
@@ -16,6 +16,8 @@ import { Notifications } from '@/components/Notifications';
 
 export const PatientDetail: React.FC = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { patients, loading, updatePatient, deletePatient } = usePatients();
   const [activeTab, setActiveTab] = useState<'odontogram' | 'history' | 'appointments'>('odontogram');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -30,12 +32,28 @@ export const PatientDetail: React.FC = () => {
   const [activeDentistId, setActiveDentistId] = useState<string | undefined>(undefined);
   const [loadingContext, setLoadingContext] = useState(true);
 
+  // Context-Aware Back Navigation
+  const handleBack = () => {
+    if (location.state?.from) {
+      navigate(-1);
+    } else {
+      navigate('/patients');
+    }
+  };
+
   // Fetch active appointment (today or future) to pre-select dentist
   React.useEffect(() => {
     const fetchContextDentist = async () => {
       if (!id) return;
       try {
         const today = new Date().toISOString().split('T')[0];
+
+        // 1. Check passed state first (from AppointmentList)
+        if (location.state?.defaultDentistId) {
+          setActiveDentistId(location.state.defaultDentistId);
+          setLoadingContext(false);
+          return;
+        }
 
         // Requirement:
         // 1. If appointment today -> use it.
@@ -73,7 +91,7 @@ export const PatientDetail: React.FC = () => {
     };
 
     fetchContextDentist();
-  }, [id]);
+  }, [id, location.state]);
 
   if (loading) {
     return (
@@ -87,9 +105,9 @@ export const PatientDetail: React.FC = () => {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">Paciente no encontrado</p>
-        <Link to="/patients" className="text-blue-600 hover:text-blue-800 mt-2 inline-block">
+        <button onClick={() => navigate('/patients')} className="text-blue-600 hover:text-blue-800 mt-2 inline-block">
           Volver a pacientes
-        </Link>
+        </button>
       </div>
     );
   }
@@ -98,6 +116,7 @@ export const PatientDetail: React.FC = () => {
     if (!patient) return;
     try {
       await updatePatient(patient.id, updates);
+      setIsEditModalOpen(false);
     } catch (error) {
       console.error('Error updating patient:', error);
       throw error;
@@ -136,12 +155,12 @@ export const PatientDetail: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Link
-            to="/patients"
+          <button
+            onClick={handleBack}
             className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
-          </Link>
+          </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
             <p className="text-gray-600">{patient.age} años • Registrado: {formatDate(patient.created_date)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}</p>
@@ -235,7 +254,7 @@ export const PatientDetail: React.FC = () => {
                 />
               )}
               {activeTab === 'history' && <TreatmentHistory patientId={patient.id} defaultDentistId={activeDentistId} />}
-              {activeTab === 'appointments' && <PatientAppointments patientId={patient.id} defaultDentistId={activeDentistId} />}
+              {activeTab === 'appointments' && <PatientAppointments patientId={patient.id} />}
             </div>
           </div>
         </div>

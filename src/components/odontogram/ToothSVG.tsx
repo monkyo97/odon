@@ -136,9 +136,9 @@ export const ToothSVG: React.FC<ToothSVGProps> = ({ number, conditions, onSurfac
             strokeWidth={getStrokeWidth(surface)}
             onClick={(e) => {
                 e.stopPropagation();
-                if (!isBlocked) onSurfaceClick(surface);
+                onSurfaceClick(surface);
             }}
-            className={`transition-colors duration-200 ${!isBlocked ? 'cursor-pointer hover:fill-blue-100' : 'cursor-not-allowed'}`}
+            className="transition-colors duration-200 cursor-pointer hover:fill-blue-100"
             data-tooltip-id={`tooltip-${number}`}
             data-tooltip-content={`${label}`}
         >

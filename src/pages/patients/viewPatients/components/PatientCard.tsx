@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { User, Phone, Mail, Calendar } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
 import { Patient } from '@/hooks/usePatients';
@@ -9,10 +9,12 @@ interface PatientCardProps {
 }
 
 export const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
+  const location = useLocation();
 
   return (
     <Link
       to={`/patients/${patient.id}`}
+      state={{ from: location.pathname + location.search }}
       className="bg-white border border-gray-200 rounded-lg p-4 transition-all duration-200 hover:border-blue-300 group hover:bg-blue-50"
     >
       <div className="flex items-start justify-between mb-3">
@@ -47,15 +49,6 @@ export const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
           Registrado: {formatDate(patient.created_date)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
         </div>
       </div>
-
-      {/* 🗓️ Próxima cita */}
-      {/* {patient.next_appointment && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          <p className="text-sm text-blue-600 font-medium">
-            Próxima cita: {new Date(patient.next_appointment).toLocaleDateString('es-ES')}
-          </p>
-        </div>
-      )} */}
     </Link>
   );
 };
