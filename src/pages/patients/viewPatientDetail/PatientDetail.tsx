@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { formatDate } from '@/utils/formatDate';
-import { ArrowLeft, Edit, Calendar, FileText, Bluetooth as Tooth, Trash2, Info } from 'lucide-react';
+import { ArrowLeft, Edit, Calendar, FileText, Bluetooth as Tooth, Trash2, Info, Eye, EyeOff } from 'lucide-react';
 import { Odontogram } from './components/odontogram/Odontogram';
 import { PatientInfo } from './components/PatientInfo';
 import { TreatmentHistory } from './components/TreatmentHistory';
@@ -107,11 +107,14 @@ export const PatientDetail: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
-            onClick={handleBack}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            onClick={() => setShowInfo(!showInfo)}
+            className={`p-2 rounded-lg border transition-colors flex items-center justify-center ${showInfo ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+              }`}
+            title={showInfo ? "Ocultar información" : "Ver información"}
           >
-            <ArrowLeft className="h-5 w-5" />
+            {showInfo ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </button>
+
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
             <p className="text-gray-600">{patient.age} años • Registrado: {formatDate(patient.created_date)}</p>
@@ -130,16 +133,6 @@ export const PatientDetail: React.FC = () => {
             // FormSelect already has label support.
             />
           </div>
-
-          <button
-            onClick={() => setShowInfo(!showInfo)}
-            className={`ml-4 p-2 rounded-lg border transition-colors flex items-center gap-2 text-sm font-medium ${showInfo ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-              }`}
-            title={showInfo ? "Ocultar información" : "Ver información"}
-          >
-            <Info className="h-4 w-4" />
-            {showInfo ? 'Ocultar Info' : 'Ver Info'}
-          </button>
         </div>
 
         <div className="flex items-center space-x-3">
@@ -149,6 +142,14 @@ export const PatientDetail: React.FC = () => {
           >
             <Edit className="h-4 w-4 mr-2" />
             Editar
+          </button>
+
+          <button
+            onClick={handleBack}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-transparent hover:border-gray-200"
+            title="Volver"
+          >
+            <ArrowLeft className="h-5 w-5" />
           </button>
         </div>
       </div>
