@@ -1,6 +1,6 @@
 import React from 'react';
 import { Surface, ToothCondition } from '@/types/odontogram';
-import { CONDITION_COLORS, CONDITIONS, SURFACE_IDS } from '@/constants/odontogram';
+import { CONDITION_COLORS } from '@/constants/odontogram';
 
 interface ToothSVGProps {
     number: number;

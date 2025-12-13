@@ -11,7 +11,7 @@ interface FormSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> 
   icon?: React.ReactNode;
   options: Option[];
   error?: FieldError;
-  registration: UseFormRegisterReturn;
+  registration?: UseFormRegisterReturn;
   placeholder?: string;
   showEmptyOption?: boolean;
 }
@@ -40,7 +40,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
           </span>
         )}
         <select
-          {...registration}
+          {...(registration || {})}
           {...props}
           className={`${baseClasses} ${borderColor} ${icon ? 'pl-10' : 'pl-3'}`}
         >

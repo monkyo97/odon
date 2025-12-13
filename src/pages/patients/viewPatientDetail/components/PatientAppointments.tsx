@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Plus, User, FileText, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Plus, User, FileText, Edit, Trash2, X, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { formatDate } from '@/utils/formatDate';
 import { useAppointments, Appointment } from '../../../../hooks/useAppointments';
 import { AppointmentModal } from '../../../appointments/components/AppointmentModal';
 import { appointmentColors, appointmentStatuses } from '../../../../constants/constantsAppointments';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { Notifications } from '@/components/Notifications';
+import { useDentists } from '@/hooks/useDentists';
+
+// Import Standard Components
+import { FormInput } from '@/components/FormInput';
+import { FormSelect } from '@/components/FormSelect';
+import { FormDateInput } from '@/components/FormDateInput';
 
 interface PatientAppointmentsProps {
   patientId: string;
@@ -13,8 +19,25 @@ interface PatientAppointmentsProps {
 }
 
 export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patientId, defaultDentistId }) => {
-  // 🧠 Usamos el hook filtrado por patientId
-  const { appointments, loading, createAppointment, updateAppointment, deleteAppointment } = useAppointments(1, patientId);
+  // Use Hook with internal filter logic
+  const {
+    appointments,
+    loading,
+    totalAppointments,
+    totalPages,
+    page,
+    setPage,
+    formMethods,
+    resetFilters,
+    createAppointment,
+    updateAppointment,
+    deleteAppointment
+  } = useAppointments(1, patientId);
+
+  const { register, watch, setValue } = formMethods;
+  const filters = watch();
+
+  const { dentists } = useDentists();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [appointmentToEdit, setAppointmentToEdit] = useState<Appointment | null>(null);
@@ -30,13 +53,10 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
     return appointmentStatuses.find(s => s.value === status)?.label || status;
   };
 
-  // 🧠 Manejo de Guardado (Crear o Editar)
   const handleSave = async (data: any) => {
     if (appointmentToEdit) {
-      // Editar
       return await updateAppointment.mutateAsync(data);
     } else {
-      // Crear
       return await createAppointment.mutateAsync(data);
     }
   };
@@ -71,16 +91,13 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
     setAppointmentToEdit(null);
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  // Convert options for FormSelect
+  const dentistOptions = dentists.map(d => ({ value: d.id, label: d.name }));
+
+  const hasActiveFilters = !!(filters.status || filters.dentistId || filters.date || filters.procedure);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Historial de Citas</h3>
         <button
@@ -95,72 +112,146 @@ export const PatientAppointments: React.FC<PatientAppointmentsProps> = ({ patien
         </button>
       </div>
 
-      {appointments.length > 0 ? (
-        <div className="space-y-4">
-          {appointments.map((appointment) => (
-            <div key={appointment.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h4 className="font-medium text-gray-900">{appointment.procedure}</h4>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status_appointments)}`}>
-                      {getStatusLabel(appointment.status_appointments)}
-                    </span>
-                  </div>
+      {/* Filters (Standard Components) */}
+      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 grid grid-cols-1 md:grid-cols-4 gap-4">
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-600 mb-3">
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      {formatDate(appointment.date)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 mr-2" />
-                      {appointment.time} ({appointment.duration} min)
-                    </div>
-                    <div className="flex items-center">
-                      <User className="h-4 w-4 mr-2" />
-                      {appointment.dentist?.name || 'No asignado'}
-                    </div>
-                  </div>
+        <FormSelect
+          label="Estado"
+          options={appointmentStatuses}
+          placeholder="Todos"
+          registration={register('status')}
+        />
 
-                  {appointment.notes && (
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="flex items-start">
-                        <FileText className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                        <p className="text-sm text-gray-700">{appointment.notes}</p>
+        <FormSelect
+          label="Odontólogo"
+          options={dentistOptions}
+          placeholder="Todos"
+          registration={register('dentistId')}
+        />
+
+        <FormDateInput
+          label="Fecha"
+          registration={register('date')}
+        />
+
+        <FormInput
+          label="Procedimiento"
+          placeholder="Buscar..."
+          iconLeft={<Search className="h-4 w-4" />}
+          iconRight={filters.procedure ? <X className="h-4 w-4" /> : undefined}
+          onIconRightClick={() => setValue('procedure', '')}
+          registration={register('procedure')}
+        />
+
+        {/* Clear Button */}
+        {hasActiveFilters && (
+          <div className="md:col-span-4 flex justify-end">
+            <button
+              onClick={resetFilters}
+              className="text-xs text-red-600 hover:text-red-800 flex items-center font-medium"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Limpiar filtros
+            </button>
+          </div>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      ) : appointments.length > 0 ? (
+        <>
+          <div className="space-y-4">
+            {appointments.map((appointment) => (
+              <div key={appointment.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h4 className="font-medium text-gray-900">{appointment.procedure}</h4>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status_appointments)}`}>
+                        {getStatusLabel(appointment.status_appointments)}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-600 mb-3">
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        {formatDate(appointment.date)}
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-2" />
+                        {appointment.time} ({appointment.duration} min)
+                      </div>
+                      <div className="flex items-center">
+                        <User className="h-4 w-4 mr-2" />
+                        {appointment.dentist?.name || 'No asignado'}
                       </div>
                     </div>
-                  )}
-                </div>
 
-                <div className="flex items-center space-x-2 ml-4">
-                  <button
-                    onClick={() => handleEdit(appointment)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Editar
-                  </button>
-                  {appointment.status_appointments !== 'completed' && appointment.status_appointments !== 'cancelled' && (
+                    {appointment.notes && (
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <div className="flex items-start">
+                          <FileText className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
+                          <p className="text-sm text-gray-700">{appointment.notes}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center space-x-2 ml-4">
                     <button
-                      onClick={() => handleDeleteClick(appointment.id)}
-                      className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center"
+                      onClick={() => handleEdit(appointment)}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
                     >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Cancelar
+                      <Edit className="h-4 w-4 mr-1" />
+                      Editar
                     </button>
-                  )}
+                    {appointment.status_appointments !== 'completed' && appointment.status_appointments !== 'cancelled' && (
+                      <button
+                        onClick={() => handleDeleteClick(appointment.id)}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+
+          {/* Pagination (Consistent UI) */}
+          <div className="flex flex-col items-center justify-center mt-6 space-y-2 border-t border-gray-100 pt-6">
+            <div className="text-xs text-gray-500">
+              {`Total: ${totalAppointments} • Página ${page} de ${totalPages}`}
             </div>
-          ))}
-        </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="flex items-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm disabled:opacity-50 disabled:cursor-not-allowed text-gray-600"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
+              </button>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="flex items-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm disabled:opacity-50 disabled:cursor-not-allowed text-gray-600"
+              >
+                Siguiente <ChevronRight className="h-4 w-4 ml-1" />
+              </button>
+            </div>
+          </div>
+        </>
       ) : (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500 mb-4">No hay citas registradas para este paciente</p>
+          <p className="text-gray-500 mb-4">No se encontraron citas con los filtros seleccionados.</p>
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => { resetFilters(); setIsModalOpen(true); }}
             className="text-blue-600 hover:text-blue-800 font-medium"
           >
             Programar primera cita

@@ -6,7 +6,7 @@ interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   iconLeft?: React.ReactNode;
   iconRight?: React.ReactNode;
   error?: FieldError;
-  registration: UseFormRegisterReturn;
+  registration?: UseFormRegisterReturn;
   classNameInput?: string;
   onIconRightClick?: () => void;
 }
@@ -37,11 +37,10 @@ export const FormInput: React.FC<FormInputProps> = ({
         )}
 
         <input
-          {...registration}
+          {...(registration || {})}
           {...props}
-          className={`w-full border rounded-lg text-sm py-2 ${
-            hasIconLeft ? 'pl-10' : 'pl-4'
-          } ${hasIconRight ? 'pr-10' : 'pr-4'}
+          className={`w-full border rounded-lg text-sm py-2 ${hasIconLeft ? 'pl-10' : 'pl-4'
+            } ${hasIconRight ? 'pr-10' : 'pr-4'}
           focus:ring-2 focus:ring-blue-500 focus:border-transparent 
           ${error ? 'border-red-400' : 'border-gray-300'}
           ${classNameInput || ''}`}

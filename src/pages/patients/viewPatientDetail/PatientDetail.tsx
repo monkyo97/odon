@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { formatDate } from '@/utils/formatDate';
-import { ArrowLeft, Edit, Calendar, FileText, Bluetooth as Tooth, Trash2, Info, ChevronUp, ChevronDown, User } from 'lucide-react';
+import { ArrowLeft, Edit, Calendar, FileText, Bluetooth as Tooth, Trash2, Info } from 'lucide-react';
 import { Odontogram } from './components/odontogram/Odontogram';
 import { PatientInfo } from './components/PatientInfo';
 import { TreatmentHistory } from './components/TreatmentHistory';
@@ -9,9 +9,10 @@ import { EditPatientModal } from './components/EditPatientModal';
 import { usePatients } from '@/hooks/usePatients';
 import { PatientAppointments } from './components/PatientAppointments';
 import { ConfirmModal } from '@/components/ConfirmModal';
-import { supabase } from '@/lib/supabase';
 import { useDentists } from '@/hooks/useDentists';
 import { Notifications } from '@/components/Notifications';
+import { useDefaultDentist } from '@/hooks/useDefaultDentist';
+import { FormSelect } from '@/components/FormSelect';
 
 
 export const PatientDetail: React.FC = () => {
@@ -28,9 +29,8 @@ export const PatientDetail: React.FC = () => {
   const { dentists } = useDentists();
   const patient = patients.find(p => p.id === id);
 
-  // Global Dentist Context State
-  const [activeDentistId, setActiveDentistId] = useState<string | undefined>(undefined);
-  const [loadingContext, setLoadingContext] = useState(true);
+  // Use custom hook for Default Dentist Context
+  const { activeDentistId, setActiveDentistId } = useDefaultDentist(id, location.state?.defaultDentistId);
 
   // Context-Aware Back Navigation
   const handleBack = () => {
@@ -40,58 +40,6 @@ export const PatientDetail: React.FC = () => {
       navigate('/patients');
     }
   };
-
-  // Fetch active appointment (today or future) to pre-select dentist
-  React.useEffect(() => {
-    const fetchContextDentist = async () => {
-      if (!id) return;
-      try {
-        const today = new Date().toISOString().split('T')[0];
-
-        // 1. Check passed state first (from AppointmentList)
-        if (location.state?.defaultDentistId) {
-          setActiveDentistId(location.state.defaultDentistId);
-          setLoadingContext(false);
-          return;
-        }
-
-        // Requirement:
-        // 1. If appointment today -> use it.
-        // 2. If no appointment today but future -> use next future one.
-        // 3. If none -> no pre-selection.
-
-        // This query gets the first appointment that is >= today, ordered by date ASC.
-        // This covers both cases: if today exists, it comes first. If not, next future comes first.
-        const { data, error } = await supabase
-          .from('appointments')
-          .select('dentist_id')
-          .eq('patient_id', id)
-          .gte('date', today) // Greater than or equal to today
-          .eq('status', '1') // Logically active
-          .neq('status_appointments', 'cancelled') // Not cancelled
-          .not('dentist_id', 'is', null) // Must have a dentist
-          .order('date', { ascending: true })
-          .order('time', { ascending: true })
-          .limit(1)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error fetching dentist context:', error);
-        } else if (data && data.dentist_id) {
-          setActiveDentistId(data.dentist_id);
-        } else {
-          // If no appointment found, clear selection (optional, or keep generic default)
-          setActiveDentistId(undefined);
-        }
-      } catch (err) {
-        console.error('Error in context fetch:', err);
-      } finally {
-        setLoadingContext(false);
-      }
-    };
-
-    fetchContextDentist();
-  }, [id, location.state]);
 
   if (loading) {
     return (
@@ -123,7 +71,8 @@ export const PatientDetail: React.FC = () => {
     }
   };
 
-  const handleDeletePatient = async () => {
+  const deletePatientHandler = async () => {
+    // renamed to avoid conflict if needed, though deletePatient is from hook
     if (!patient) return;
     setIsConfirmOpen(true);
   };
@@ -151,6 +100,8 @@ export const PatientDetail: React.FC = () => {
     { id: 'appointments', label: 'Citas', icon: Calendar }
   ];
 
+  const dentistOptions = dentists.map(d => ({ value: d.id, label: d.name }));
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -163,27 +114,21 @@ export const PatientDetail: React.FC = () => {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
-            <p className="text-gray-600">{patient.age} años • Registrado: {formatDate(patient.created_date)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}</p>
+            <p className="text-gray-600">{patient.age} años • Registrado: {formatDate(patient.created_date)}</p>
           </div>
 
           {/* Global Dentist Selector */}
-          <div className="ml-4 min-w-[200px]">
-            <div className="relative">
-              <select
-                value={activeDentistId || ''}
-                onChange={(e) => setActiveDentistId(e.target.value || undefined)}
-                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer hover:bg-gray-50 transition-colors appearance-none"
-              >
-                <option value="">-- Seleccionar Odontólogo --</option>
-                {dentists.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
-              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
-            </div>
+          <div className="ml-4 min-w-[250px]">
+            <FormSelect
+              label="Odontólogo:"
+              options={dentistOptions}
+              value={activeDentistId || ''}
+              onChange={(e) => setActiveDentistId(e.target.value || undefined)}
+              placeholder="-- Seleccionar Odontólogo --"
+              showEmptyOption={true}
+            // Custom styling to match previous look if needed, or rely on FormSelect defaults
+            // FormSelect already has label support.
+            />
           </div>
 
           <button
@@ -192,7 +137,7 @@ export const PatientDetail: React.FC = () => {
               }`}
             title={showInfo ? "Ocultar información" : "Ver información"}
           >
-            <Info className="h-4 w-4" /> {/* Switched from User to Info icon to avoid confusion with the selector icon, though original code had User */}
+            <Info className="h-4 w-4" />
             {showInfo ? 'Ocultar Info' : 'Ver Info'}
           </button>
         </div>
@@ -205,14 +150,6 @@ export const PatientDetail: React.FC = () => {
             <Edit className="h-4 w-4 mr-2" />
             Editar
           </button>
-          {/* <button
-            onClick={handleDeletePatient}
-            className="flex items-center bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Eliminar
-          </button> */}
-
         </div>
       </div>
 
