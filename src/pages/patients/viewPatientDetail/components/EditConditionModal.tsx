@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import type { ToothCondition } from './odontogram/Odontogram';
+import { FormDateInput } from '@/components/FormDateInput';
 
 interface EditConditionModalProps {
   isOpen: boolean;
@@ -77,7 +78,7 @@ export const EditConditionModal: React.FC<EditConditionModalProps> = ({
           <h3 className="text-lg font-semibold text-gray-900">
             Editar Condición - Pieza {condition.toothNumber}
           </h3>
-          <button 
+          <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
@@ -141,14 +142,10 @@ export const EditConditionModal: React.FC<EditConditionModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha
-            </label>
-            <input
-              type="date"
+            <FormDateInput
+              label="Fecha"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
           </div>

@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormInput } from '@components/FormInput';
+import { FormDateInput } from '@components/FormDateInput';
 import { FormSelect } from '@components/FormSelect';
 import { FormTextArea } from '@components/FormTextArea';
 import { useDentists } from '@hooks/useDentists';
@@ -48,7 +49,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
   appointment,
 }) => {
   const { dentists, loading: loadingDentists } = useDentists();
-  
+
   const {
     register,
     handleSubmit,
@@ -136,10 +137,8 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
               error={errors.patient_phone}
             />
 
-            <FormInput
-              type="date"
+            <FormDateInput
               label="Fecha *"
-              iconLeft={<Calendar className="h-4 w-4" />}
               registration={register('date')}
               error={errors.date}
             />
@@ -169,9 +168,9 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
                 loadingDentists
                   ? [{ value: '', label: 'Cargando...' }]
                   : dentists.map((d) => ({
-                      value: d.id,
-                      label: `${d.name} — ${d.specialty || 'General'}`,
-                    }))
+                    value: d.id,
+                    label: `${d.name} — ${d.specialty || 'General'}`,
+                  }))
               }
               placeholder="Seleccionar odontólogo"
             />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
 import type { ToothCondition } from './odontogram/Odontogram';
+import { FormDateInput } from '@/components/FormDateInput';
 
 interface ConditionModalProps {
   isOpen: boolean;
@@ -105,7 +106,7 @@ export const ConditionModal: React.FC<ConditionModalProps> = ({
           <h3 className="text-lg font-semibold text-gray-900">
             Registrar Condición - Pieza Dental {toothNumber}
           </h3>
-          <button 
+          <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
@@ -131,7 +132,7 @@ export const ConditionModal: React.FC<ConditionModalProps> = ({
                       className="mr-3"
                     />
                     <div className="flex items-center">
-                      <div 
+                      <div
                         className="w-4 h-4 rounded-full mr-2"
                         style={{ backgroundColor: condition.color }}
                       ></div>
@@ -196,7 +197,7 @@ export const ConditionModal: React.FC<ConditionModalProps> = ({
                           className="mr-3"
                         />
                         <div className="flex items-center">
-                          <div 
+                          <div
                             className="w-4 h-4 rounded-full mr-2 border border-gray-300"
                             style={{ backgroundColor: severity.color }}
                           ></div>

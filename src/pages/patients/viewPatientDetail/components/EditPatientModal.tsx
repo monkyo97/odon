@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { Patient } from '@/hooks/usePatients';
 import { FormInput } from '@/components/FormInput';
+import { FormDateInput } from '@/components/FormDateInput';
 import { FormTextArea } from '@/components/FormTextArea';
 import { FormSelect } from '@/components/FormSelect';
 import { Notifications } from '@/components/Notifications';
@@ -105,10 +106,8 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
               placeholder="Ej: María González López"
             />
 
-            <FormInput
-              type="date"
+            <FormDateInput
               label="Fecha de nacimiento *"
-              iconLeft={<Calendar className="h-4 w-4" />}
               registration={register('birth_date')}
               error={errors.birth_date}
             />

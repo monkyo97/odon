@@ -10,8 +10,10 @@ import {
   Stethoscope,
   ChevronLeft,
   ChevronRight,
-  Menu
+  Menu,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -25,6 +27,7 @@ export const Sidebar: React.FC = memo(() => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { logout } = useAuth();
 
   return (
     <>
@@ -49,12 +52,12 @@ export const Sidebar: React.FC = memo(() => {
       {/* Sidebar */}
       <div className={`
         fixed lg:static inset-y-0 left-0 z-50 bg-white shadow-sm border-r border-gray-200 
-        transform transition-all duration-300 ease-in-out
+        transform transition-all duration-300 ease-in-out flex flex-col
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}
-        w-64
+        w-64 h-screen lg:h-auto
       `}>
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between h-16">
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between h-16 flex-shrink-0">
           <div className={`flex items-center ${isCollapsed ? 'justify-center w-full' : ''}`}>
             <Stethoscope className="h-8 w-8 text-blue-600 flex-shrink-0" />
             {!isCollapsed && (
@@ -74,7 +77,7 @@ export const Sidebar: React.FC = memo(() => {
           </button>
         </div>
 
-        <nav className="p-4">
+        <nav className="p-4 flex-1 overflow-y-auto">
           <ul className="space-y-2">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
@@ -84,8 +87,8 @@ export const Sidebar: React.FC = memo(() => {
                     to={item.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-colors duration-200 ${isActive
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                        : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'text-gray-700 hover:bg-gray-100'
                       } ${isCollapsed ? 'justify-center' : ''}`}
                     title={isCollapsed ? item.name : ''}
                   >
@@ -97,6 +100,20 @@ export const Sidebar: React.FC = memo(() => {
             })}
           </ul>
         </nav>
+
+        {/* Mobile Logout (Bottom of Sidebar) */}
+        <div className="p-4 border-t border-gray-200 lg:hidden mt-auto">
+          <button
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              logout();
+            }}
+            className="flex items-center w-full px-3 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors duration-200"
+          >
+            <LogOut className="h-5 w-5 mr-3" />
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
     </>
   );

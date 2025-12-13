@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormInput } from '@/components/FormInput';
+import { FormDateInput } from '@/components/FormDateInput';
 import { FormTextArea } from '@/components/FormTextArea';
 import { Notifications } from '@/components/Notifications';
 
@@ -100,10 +101,8 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
               error={errors.name}
             />
 
-            <FormInput
-              type="date"
+            <FormDateInput
               label="Fecha de nacimiento"
-              iconLeft={<Calendar className="h-4 w-4" />}
               registration={register('birthDate')}
               error={errors.birthDate}
             />

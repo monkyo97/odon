@@ -28,6 +28,16 @@ export const FormDateInput: React.FC<FormDateInputProps> = ({
                     type="date"
                     {...(registration || {})}
                     {...props}
+                    onClick={(e) => {
+                        try {
+                            if (typeof (e.currentTarget as HTMLInputElement).showPicker === 'function') {
+                                (e.currentTarget as HTMLInputElement).showPicker();
+                            }
+                        } catch (error) {
+                            // Ignore
+                        }
+                        props.onClick?.(e);
+                    }}
                     className={`w-full pl-10 pr-4 py-2 border rounded-lg text-sm 
             focus:ring-2 focus:ring-blue-500 focus:border-transparent
             ${error ? 'border-red-400' : 'border-gray-300'}

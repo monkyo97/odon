@@ -248,7 +248,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = () => {
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-auto"
                     >
                         <option value="active">Activas (Prog/Conf)</option>
                         <option value="all">Todos los estados</option>
@@ -262,7 +262,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = () => {
                     <select
                         value={dentistFilter}
                         onChange={(e) => setDentistFilter(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-auto"
                     >
                         <option value="all">Todos los Odontólogos</option>
                         {dentists.map(d => (

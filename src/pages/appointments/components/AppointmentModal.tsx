@@ -15,6 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { usePatients } from '@hooks/usePatients';
 import { useDentists } from '@hooks/useDentists';
 import { FormInput } from '@components/FormInput';
+import { FormDateInput } from '@components/FormDateInput';
 import { FormSelect } from '@components/FormSelect';
 import { FormRadioGroup } from '@components/FormRadioGroup';
 import { FormSearchSelect } from '@components/FormSearchSelect';
@@ -263,10 +264,8 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             />
 
             {/* Fecha */}
-            <FormInput
-              type="date"
+            <FormDateInput
               label="Fecha *"
-              iconLeft={<Calendar className="h-4 w-4" />}
               registration={register('date')}
               error={errors.date}
             />

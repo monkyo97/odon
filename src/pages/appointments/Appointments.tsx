@@ -20,39 +20,49 @@ export const Appointments: React.FC = () => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Agenda</h1>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">
             Gestión de citas y calendario médico
           </p>
+          {view === 'calendar' && (
+            <div className="mt-3">
+              <input
+                type="date"
+                value={selectedDate}
+                onClick={(e) => {
+                  try {
+                    if (typeof (e.currentTarget as HTMLInputElement).showPicker === 'function') {
+                      (e.currentTarget as HTMLInputElement).showPicker();
+                    }
+                  } catch (error) {
+                    // Ignore
+                  }
+                }}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-          {view === 'calendar' && (
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            />
-          )}
-
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setView('list')}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${view === 'list'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+              className={`flex-1 sm:flex-none px-3 py-1 rounded text-sm font-medium transition-colors ${view === 'list'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
                 }`}
             >
               Lista
             </button>
             <button
               onClick={() => setView('calendar')}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${view === 'calendar'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+              className={`flex-1 sm:flex-none px-3 py-1 rounded text-sm font-medium transition-colors ${view === 'calendar'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
                 }`}
             >
               Calendario
