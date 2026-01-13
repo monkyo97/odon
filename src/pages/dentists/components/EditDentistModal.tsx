@@ -8,7 +8,7 @@ import { FormSelect } from '@components/FormSelect';
 import { especialities, statusOptions } from '../../../constants/globalConstants';
 import { Notifications } from '@/components/Notifications';
 
-// 🧠 Validación con Zod
+// 🧠 Zod validation
 const dentistSchema = z.object({
   name: z.string().min(3, 'El nombre es obligatorio'),
   email: z.string().email('Correo inválido'),
@@ -58,7 +58,7 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
     defaultValues: dentist,
   });
 
-  // 🔄 Sincroniza valores cuando cambia el odontólogo
+  // 🔄 Syncs values when dentist changes
   useEffect(() => {
     if (dentist) reset(dentist);
   }, [dentist, reset]);
@@ -90,7 +90,7 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
           </button>
         </div>
 
-        {/* Formulario */}
+        {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
           <div className="grid grid-cols-1 gap-4">
             <FormInput
@@ -155,7 +155,7 @@ export const EditDentistModal: React.FC<EditDentistModalProps> = ({
             />
           </div>
 
-          {/* Botones */}
+          {/* Buttons */}
           <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
             <button
               type="button"

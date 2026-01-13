@@ -12,7 +12,7 @@ import type { Appointment } from '@hooks/useAppointments';
 import { appointmentDurations, appointmentStatuses, procedures, timeSlots } from '../../../constants/constantsAppointments';
 import { Notifications } from '@/components/Notifications';
 
-// 🧠 Validación con Zod
+// 🧠 Zod validation
 const appointmentSchema = z.object({
   patient_name: z.string().min(2, 'El nombre del paciente es obligatorio'),
   patient_phone: z
@@ -71,7 +71,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
     },
   });
 
-  // 🔁 Cargar datos al abrir el modal
+  // 🔁 Load data when opening modal
   useEffect(() => {
     if (appointment) {
       reset({
@@ -116,9 +116,9 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
           </button>
         </div>
 
-        {/* Formulario */}
+        {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-          {/* Campos principales */}
+          {/* Main fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Nombre del paciente *"
@@ -183,7 +183,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
             />
           </div>
 
-          {/* Procedimiento */}
+          {/* Procedure */}
           <FormSelect
             label="Procedimiento *"
             registration={register('procedure')}
@@ -192,7 +192,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
             placeholder="Seleccionar procedimiento"
           />
 
-          {/* Notas */}
+          {/* Notes */}
           <FormTextArea
             label="Notas"
             placeholder="Observaciones, preparación, etc..."
@@ -201,7 +201,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
             rows={3}
           />
 
-          {/* Botones */}
+          {/* Buttons */}
           <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
             <button
               type="button"

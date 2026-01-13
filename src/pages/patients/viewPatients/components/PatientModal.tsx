@@ -8,7 +8,7 @@ import { FormDateInput } from '@/components/FormDateInput';
 import { FormTextArea } from '@/components/FormTextArea';
 import { Notifications } from '@/components/Notifications';
 
-// 🧠 Esquema de validación con Zod
+// 🧠 Zod validation schema
 const patientSchema = z.object({
   name: z.string().min(2, 'El nombre es obligatorio'),
   email: z.string().email('Correo inválido').optional().or(z.literal('')),
@@ -89,9 +89,9 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
           </button>
         </div>
 
-        {/* Formulario */}
+        {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-          {/* Datos personales */}
+          {/* Personal data */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Nombre completo *"
@@ -126,7 +126,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
             />
           </div>
 
-          {/* Dirección */}
+          {/* Address */}
           <FormInput
             label="Dirección"
             placeholder="Calle, número, ciudad, código postal"
@@ -134,7 +134,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
             error={errors.address}
           />
 
-          {/* Contacto de emergencia */}
+          {/* Emergency contact */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Contacto de emergencia"
@@ -152,7 +152,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
             />
           </div>
 
-          {/* Historia médica */}
+          {/* Medical history */}
           <FormTextArea
             label="Historia médica"
             placeholder="Alergias, medicamentos, condiciones médicas relevantes..."
@@ -161,7 +161,7 @@ export const PatientModal: React.FC<PatientModalProps> = ({ isOpen, onClose, onS
             rows={4}
           />
 
-          {/* Botones */}
+          {/* Buttons */}
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"

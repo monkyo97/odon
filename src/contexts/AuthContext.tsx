@@ -39,71 +39,71 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
   const [isLoading, setIsLoading] = useState(true);
 
-  const sessionLoadedRef = useRef(false); // 🧠 Evita doble fetch inicial
+  const sessionLoadedRef = useRef(false); // 🧠 Avoids double initial fetch
 
   const fetchClinicId = useCallback(async (userId: string) => {
-  const { data, error } = await supabase
-    .from('user_profiles')
-    .select('clinic_id')
-    .eq('user_id', userId)
-    .single();
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('clinic_id')
+      .eq('user_id', userId)
+      .single();
 
-  if (error) {
-    console.warn('No se pudo obtener clinic_id del usuario:', error.message);
-    setClinicId(null);
-    sessionStorage.removeItem('clinic_id');
-  } else {
-    const id = data?.clinic_id ?? null;
-    // 🔹 Solo actualizar si realmente cambió
-    setClinicId((prev) => {
-      if (prev !== id) {
-        if (id) sessionStorage.setItem('clinic_id', id);
-        else sessionStorage.removeItem('clinic_id');
-        return id;
-      }
-      return prev;
-    });
-  }
-}, []);
+    if (error) {
+      console.warn('No se pudo obtener clinic_id del usuario:', error.message);
+      setClinicId(null);
+      sessionStorage.removeItem('clinic_id');
+    } else {
+      const id = data?.clinic_id ?? null;
+      // 🔹 Only update if it really changed
+      setClinicId((prev) => {
+        if (prev !== id) {
+          if (id) sessionStorage.setItem('clinic_id', id);
+          else sessionStorage.removeItem('clinic_id');
+          return id;
+        }
+        return prev;
+      });
+    }
+  }, []);
 
 
   useEffect(() => {
-  let initialSessionHandled = false;
+    let initialSessionHandled = false;
 
-  const loadSession = async () => {
-    const { data } = await supabase.auth.getSession();
-    const sessionUser = data.session?.user ?? null;
-    setUser(sessionUser);
+    const loadSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      const sessionUser = data.session?.user ?? null;
+      setUser(sessionUser);
 
-    if (sessionUser) {
-      await fetchClinicId(sessionUser.id);
-    }
+      if (sessionUser) {
+        await fetchClinicId(sessionUser.id);
+      }
 
-    setIsLoading(false);
-    initialSessionHandled = true;
-  };
+      setIsLoading(false);
+      initialSessionHandled = true;
+    };
 
-  loadSession();
+    loadSession();
 
-  const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-    // 🚫 Ignorar el primer evento "INITIAL_SESSION" (Supabase lo dispara siempre)
-    if (!initialSessionHandled && event === 'INITIAL_SESSION') return;
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      // 🚫 Ignore the first "INITIAL_SESSION" event (Supabase always fires it)
+      if (!initialSessionHandled && event === 'INITIAL_SESSION') return;
 
-    const activeUser = session?.user ?? null;
-    setUser(activeUser);
+      const activeUser = session?.user ?? null;
+      setUser(activeUser);
 
-    if (activeUser) {
-      fetchClinicId(activeUser.id);
-    } else {
-      setClinicId(null);
-      sessionStorage.removeItem('clinic_id');
-    }
-  });
+      if (activeUser) {
+        fetchClinicId(activeUser.id);
+      } else {
+        setClinicId(null);
+        sessionStorage.removeItem('clinic_id');
+      }
+    });
 
-  return () => {
-    listener.subscription.unsubscribe();
-  };
-}, [fetchClinicId]);
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, [fetchClinicId]);
 
 
   const login = useCallback(
@@ -116,7 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setUser(data.user);
       await fetchClinicId(data.user.id);
-      sessionLoadedRef.current = true; // 🟩 Evita repetición tras login
+      sessionLoadedRef.current = true; // 🟩 Avoid repetition after login
 
       return { user: data.user, error: null };
     },

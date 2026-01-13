@@ -88,7 +88,7 @@ export const TreatmentModal: React.FC<TreatmentModalProps> = ({
   // Update cost when procedure changes
   useEffect(() => {
     // Only auto-update cost if user hasn't typed a cost manually?
-    // Requirement: "Al crear un tratamiento nuevo: El costo configurado debe cargarse automáticamente."
+    // Requirement: "When creating a new treatment: The configured cost must load automatically."
     // If we are opening with initialData (e.g. from Odontogram), cost might be 0 or set.
     // If user *changes* procedure, we should update cost.
     if (formData.procedure && catalog.length > 0) {

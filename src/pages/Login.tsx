@@ -12,7 +12,7 @@ export const Login: React.FC = () => {
 
   const { user, login } = useAuth();
 
-  // Si ya está logueado, redirige al inicio
+  // If already logged in, redirect to home
   if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {

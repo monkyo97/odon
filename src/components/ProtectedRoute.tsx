@@ -10,7 +10,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, isLoading } = useAuth();
   const hasRenderedRef = useRef(false);
 
-  // ⏳ 1. Espera a que AuthProvider cargue la sesión inicial
+  // ⏳ 1. Wait for AuthProvider to load initial session
   if (isLoading && !hasRenderedRef.current) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -19,12 +19,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // 🚫 2. Usuario no autenticado: redirige a login
+  // 🚫 2. User not authenticated: redirect to login
   if (!user && !isLoading) {
     return <Navigate to="/login" replace />;
   }
 
-  // ✅ 3. Usuario autenticado: renderiza y marca como renderizado una vez
+  // ✅ 3. User authenticated: render and mark as rendered once
   if (user && !hasRenderedRef.current) {
     hasRenderedRef.current = true;
   }

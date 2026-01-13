@@ -31,7 +31,7 @@ export const Register: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    // ✅ Validaciones
+    // ✅ Validations
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
       setError('Por favor completa todos los campos obligatorios');
       return;
@@ -49,7 +49,7 @@ export const Register: React.FC = () => {
 
     setIsSubmitting(true);
 
-    // ✅ Llamar al método register del AuthContext
+    // ✅ Call register method from AuthContext
     const { user: createdUser, error } = await register({
       email: formData.email.trim(),
       password: formData.password,
@@ -84,7 +84,7 @@ export const Register: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* 🔹 Datos personales */}
+            {/* 🔹 Personal Data */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InputField
                 id="name"
@@ -131,16 +131,16 @@ export const Register: React.FC = () => {
                 placeholder="COL-12345"
               /> */}
 
-              
+
             </div>
             <InputField
-                id="clinicName"
-                label="Nombre de la clínica"
-                iconLeft={<Building />}
-                value={formData.clinicName}
-                onChange={(e) => setFormData({ ...formData, clinicName: e.target.value })}
-                placeholder="Clínica Dental González"
-              />
+              id="clinicName"
+              label="Nombre de la clínica"
+              iconLeft={<Building />}
+              value={formData.clinicName}
+              onChange={(e) => setFormData({ ...formData, clinicName: e.target.value })}
+              placeholder="Clínica Dental González"
+            />
             <InputField
               id="clinicAddress"
               label="Dirección de la clínica"
@@ -149,7 +149,7 @@ export const Register: React.FC = () => {
               placeholder="Av. Amazonas 123, Quito"
             />
 
-            {/* 🔹 Contraseña */}
+            {/* 🔹 Password */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <PasswordField
                 id="password"
@@ -199,7 +199,7 @@ export const Register: React.FC = () => {
   );
 };
 
-// 🧩 Componentes auxiliares para limpieza del código
+// 🧩 Auxiliary components for code cleanliness
 interface InputProps {
   id: string;
   label: string;

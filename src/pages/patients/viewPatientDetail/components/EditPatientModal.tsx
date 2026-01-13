@@ -10,7 +10,7 @@ import { FormTextArea } from '@/components/FormTextArea';
 import { FormSelect } from '@/components/FormSelect';
 import { Notifications } from '@/components/Notifications';
 
-// 🧠 Validación con Zod
+// 🧠 Zod validation
 const patientSchema = z.object({
   name: z.string().min(2, 'El nombre es obligatorio'),
   email: z.string().email('Correo inválido'),
@@ -62,7 +62,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
     },
   });
 
-  // 🔄 Actualiza el formulario al seleccionar un paciente
+  // 🔄 Updates form when patient is selected
   useEffect(() => {
     if (patient) reset(patient);
   }, [patient, reset]);
@@ -94,9 +94,9 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
           </button>
         </div>
 
-        {/* Formulario */}
+        {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-          {/* Datos personales */}
+          {/* Personal data */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Nombre completo *"
@@ -141,7 +141,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
             />
           </div>
 
-          {/* Dirección */}
+          {/* Address */}
           <FormInput
             label="Dirección"
             registration={register('address')}
@@ -149,7 +149,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
             placeholder="Calle, número, ciudad, código postal"
           />
 
-          {/* Contacto de emergencia */}
+          {/* Emergency contact */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
               label="Contacto de emergencia"
@@ -167,7 +167,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
             />
           </div>
 
-          {/* Historia médica */}
+          {/* Medical history */}
           <FormTextArea
             label="Historia médica"
             registration={register('medical_history')}
@@ -176,7 +176,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
             rows={4}
           />
 
-          {/* Botones */}
+          {/* Buttons */}
           <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
             <button
               type="button"

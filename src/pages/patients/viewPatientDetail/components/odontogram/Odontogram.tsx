@@ -11,10 +11,10 @@ import { Loader2, History, Plus, Menu, X, ArrowLeft, CheckCircle, FileText, Edit
 import { Notifications } from '@/components/Notifications';
 import { OdontogramHistoryPanel } from './OdontogramHistoryPanel';
 import { OdontogramPrintPreview } from './OdontogramPrintPreview';
-import { useTreatments } from '@/hooks/useTreatments';
+import { Treatment, useTreatments } from '@/hooks/useTreatments';
 import { useDentists } from '@/hooks/useDentists';
 import { TreatmentModal } from '../TreatmentModal';
-import type { Treatment } from '../TreatmentHistory';
+
 
 interface OdontogramProps {
   patientId: string;
@@ -32,6 +32,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({
   defaultDentistId
 }) => {
   /* State */
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedTool, setSelectedTool] = useState<ToothConditionType | null>(null);
   const [saving, setSaving] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -70,7 +71,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({
     // Open Modal with pre-filled data
     setTreatmentInitialData({
       toothNumber: condition.tooth_number.toString(),
-      procedure: 'OTROS', // Requirement: "El campo Procedimiento debe cargarse automáticamente con el valor: OTROS"
+      procedure: 'OTROS', // Requirement: "The Procedure field must be automatically loaded with the value: OTROS"
       surface: condition.surface !== 'whole' ? condition.surface : '',
       // Use defaultDentistId if available, fall back to first dentist
       dentistId: defaultDentistId || (dentists.length > 0 ? dentists[0].id : undefined),
@@ -172,7 +173,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({
 
     // --- LOGIC 1: Handle Missing/Extraction (Always Center/Whole) ---
     if (selectedTool === CONDITIONS.MISSING || selectedTool === CONDITIONS.EXTRACTION_PLANNED) {
-      // User Req: "la marca se seleccionará en el centro del diente siempre => Oclusal/Incisal"
+      // User Req: "the mark will always be selected in the center of the tooth => Occlusal/Incisal"
       const targetSurface = getCenterSurface(toothNumber);
 
       try {
@@ -192,7 +193,7 @@ export const Odontogram: React.FC<OdontogramProps> = ({
 
     // --- LOGIC 2: Handle Healthy (Eraser) on Blocked Tooth ---
     if (selectedTool === CONDITIONS.HEALTHY && isBlocked) {
-      // User Req: "si selecciono sano (borrar)... solo se quita 'a extraer' o 'ausente' como primero a eliminar"
+      // User Req: "if I select healthy (delete)... only 'to be extracted' or 'missing' is removed first"
       // We need to apply 'healthy' explicitly to the surface where the blocking condition exists.
       // Usually we enforce Center now, but check where it is.
       if (existingBlockingCondition) {
@@ -359,124 +360,177 @@ export const Odontogram: React.FC<OdontogramProps> = ({
     );
   }
 
+  // --- FULLSCREEN CONTAINER CLASSES ---
+  const containerClasses = isFullScreen
+    ? "fixed inset-0 z-50 bg-white flex flex-col" // Fullscreen mode
+    : "relative flex flex-col h-[calc(100vh-200px)]"; // Normal mode
+
   return (
-    <div className="relative flex flex-col h-[calc(100vh-200px)]">
-      {/* Header with Hamburger */}
-      <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4 mb-4 bg-white p-4 rounded-xl border shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+    <div className={containerClasses}>
 
+      {/* FULLSCREEN HEADER (Only visible in Fullscreen Mode) */}
+      {isFullScreen && (
+        <div className="flex items-center justify-between px-6 py-4 bg-white border-b shadow-sm z-50">
           <div className="flex items-center gap-4">
-            {!isHistoryPanelOpen && (
-              <button
-                onClick={() => {
-                  if (isHistoryPanelOpen) setIsHistoryPanelOpen(false); // Close history if opening tools
-                  setIsSidebarOpen(!isSidebarOpen);
-                }}
-                className={`p-2 rounded-lg transition-colors flex-shrink-0 ${isSidebarOpen ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}
-                title={isSidebarOpen ? "Cerrar herramientas" : "Abrir herramientas"}
-              >
-                {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
-            )}
-            {isHistoryPanelOpen && <div className="w-10 hidden sm:block"></div>}
-
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className={`p-2 rounded-lg transition-colors flex-shrink-0 ${isSidebarOpen ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}
+              title={isSidebarOpen ? "Cerrar herramientas" : "Abrir herramientas"}
+            >
+              {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
             <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  Odontogram
-                  {isHistoryMode && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full border border-orange-200 whitespace-nowrap">Modo Historial</span>}
-                </h2>
-                {/* Review Mode Toggle */}
-                <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
-                  <button
-                    className={`text-xs font-medium px-2 py-1 rounded cursor-pointer transition ${!isReviewMode ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                    onClick={() => setIsReviewMode(false)}
-                  >
-                    Visualizar
-                  </button>
-                  <button
-                    className={`text-xs font-medium px-2 py-1 rounded cursor-pointer transition ${isReviewMode ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                    onClick={() => setIsReviewMode(true)}
-                  >
-                    Revisar
-                  </button>
-                </div>
-              </div>
-              <p className="text-sm text-gray-500 mt-1 line-clamp-1">
-                {(() => {
-                  const sortedOdontograms = [...(odontograms || [])].sort((a, b) =>
-                    new Date(a.date).getTime() - new Date(b.date).getTime()
-                  );
-
-                  const firstDate = sortedOdontograms.length > 0 ? formatDate(sortedOdontograms[0].date) : '-';
-                  const lastEvolution = currentOdontogram?.name ? currentOdontogram.name : '-';
-
-                  const displayString = currentOdontogram
-                    ? `Inicial: ${firstDate} - ${lastEvolution}`
-                    : 'Nuevo Odontograma';
-
-                  return currentOdontogram ? displayString : 'Sin odontograma registrado';
-                })()}
-              </p>
+              <h2 className="text-xl font-bold text-gray-800 leading-tight">Edición de Odontograma</h2>
+              <p className="text-sm text-gray-500">Paciente: {patientName}</p>
             </div>
           </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsFullScreen(false)}
+              className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => setIsFullScreen(false)}
+              className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition font-medium flex items-center gap-2"
+            >
+              <CheckCircle className="h-4 w-4" />
+              Finalizar
+            </button>
+          </div>
         </div>
+      )}
 
-        <div className="flex flex-wrap gap-2 pt-2 border-t lg:border-none lg:pt-0">
+      {/* Header with Hamburger */}
+      {!isFullScreen && (
+        <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4 mb-4 bg-white p-4 rounded-xl border shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
 
-          {/* Volver button (only in history mode) */}
-          {isHistoryMode && (
-            <button
-              onClick={() => {
-                setSelectedHistoryId(undefined);
-              }}
-              className="flex items-center px-4 py-2 bg-white border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition text-sm whitespace-nowrap"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver a Actual
-            </button>
-          )}
+            <div className="flex items-center gap-4">
+              {!isHistoryPanelOpen && (
+                <button
+                  onClick={() => {
+                    if (isHistoryPanelOpen) setIsHistoryPanelOpen(false); // Close history if opening tools
+                    setIsSidebarOpen(!isSidebarOpen);
+                  }}
+                  className={`p-2 rounded-lg transition-colors flex-shrink-0 ${isSidebarOpen ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100 text-gray-600'}`}
+                  title={isSidebarOpen ? "Cerrar herramientas" : "Abrir herramientas"}
+                >
+                  {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
+              )}
+              {isHistoryPanelOpen && <div className="w-10 hidden sm:block"></div>}
 
-          {/* Historial Toggle Button */}
-          {latestOdontogram && (
-            <button
-              onClick={() => {
-                if (isSidebarOpen) setIsSidebarOpen(false); // Close tools
-                setIsHistoryPanelOpen(!isHistoryPanelOpen);
-              }}
-              className={`flex items-center px-4 py-2 border rounded-lg transition text-sm whitespace-nowrap ${isHistoryPanelOpen ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-            >
-              <History className="h-4 w-4 mr-2" />
-              Historial
-            </button>
-          )}
+              <div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    Odontogram
+                    {isHistoryMode && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full border border-orange-200 whitespace-nowrap">Modo Historial</span>}
+                  </h2>
+                  {/* Review Mode Toggle */}
+                  <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                    <button
+                      className={`text-xs font-medium px-2 py-1 rounded cursor-pointer transition ${!isReviewMode ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                      onClick={() => setIsReviewMode(false)}
+                    >
+                      Visualizar
+                    </button>
+                    <button
+                      className={`text-xs font-medium px-2 py-1 rounded cursor-pointer transition ${isReviewMode ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                      onClick={() => setIsReviewMode(true)}
+                    >
+                      Revisar
+                    </button>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+                  {(() => {
+                    const sortedOdontograms = [...(odontograms || [])].sort((a, b) =>
+                      new Date(a.date).getTime() - new Date(b.date).getTime()
+                    );
 
-          {!latestOdontogram && (
-            <button
-              onClick={handleCreateVersion}
-              disabled={saving}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm whitespace-nowrap"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Crear Inicial
-            </button>
-          )}
+                    const firstDate = sortedOdontograms.length > 0 ? formatDate(sortedOdontograms[0].date) : '-';
+                    const lastEvolution = currentOdontogram?.name ? currentOdontogram.name : '-';
 
-          {/* Create New Version (Only if not in history mode AND history panel is closed) */}
-          {latestOdontogram && !isHistoryMode && !isHistoryPanelOpen && (
-            <button
-              onClick={handleCreateVersion}
-              disabled={saving}
-              className="flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 text-sm whitespace-nowrap"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Versión
-            </button>
-          )}
+                    const displayString = currentOdontogram
+                      ? `Inicial: ${firstDate} - ${lastEvolution}`
+                      : 'Nuevo Odontograma';
+
+                    return currentOdontogram ? displayString : 'Sin odontograma registrado';
+                  })()}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-2 border-t lg:border-none lg:pt-0">
+
+            {/* Fullscreen Toggle Button */}
+            {!isHistoryMode && latestOdontogram && (
+              <button
+                onClick={() => setIsFullScreen(true)}
+                className="flex items-center px-4 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg hover:bg-indigo-100 transition text-sm whitespace-nowrap"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Pantalla Completa
+              </button>
+            )}
+
+            {/* Volver button (only in history mode) */}
+            {isHistoryMode && (
+              <button
+                onClick={() => {
+                  setSelectedHistoryId(undefined);
+                }}
+                className="flex items-center px-4 py-2 bg-white border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition text-sm whitespace-nowrap"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver a Actual
+              </button>
+            )}
+
+            {/* Historial Toggle Button */}
+            {latestOdontogram && (
+              <button
+                onClick={() => {
+                  if (isSidebarOpen) setIsSidebarOpen(false); // Close tools
+                  setIsHistoryPanelOpen(!isHistoryPanelOpen);
+                }}
+                className={`flex items-center px-4 py-2 border rounded-lg transition text-sm whitespace-nowrap ${isHistoryPanelOpen ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+              >
+                <History className="h-4 w-4 mr-2" />
+                Historial
+              </button>
+            )}
+
+            {!latestOdontogram && (
+              <button
+                onClick={handleCreateVersion}
+                disabled={saving}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm whitespace-nowrap"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Crear Inicial
+              </button>
+            )}
+
+            {/* Create New Version (Only if not in history mode AND history panel is closed) */}
+            {latestOdontogram && !isHistoryMode && !isHistoryPanelOpen && (
+              <button
+                onClick={handleCreateVersion}
+                disabled={saving}
+                className="flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 text-sm whitespace-nowrap"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Versión
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="flex flex-1 relative overflow-hidden gap-6">
+      <div className={`flex flex-1 relative overflow-hidden gap-6 ${isFullScreen ? 'p-6 bg-gray-50' : ''}`}>
         {/* Main Odontogram Area */}
         <div className="flex-1 bg-white border rounded-xl p-6 overflow-y-auto shadow-sm flex flex-col">
 

@@ -39,7 +39,7 @@ export const useUserProfile = () => {
   };
 
   // -------------------------------
-  // 🔹 Obtener perfil
+  // 🔹 Get profile
   // -------------------------------
   const fetchUserProfile = async (): Promise<UserProfile | null> => {
     if (!user) return null;
@@ -61,7 +61,7 @@ export const useUserProfile = () => {
   });
 
   // -------------------------------
-  // 🧩 Crear perfil
+  // 🧩 Create profile
   // -------------------------------
   const createUserProfile = useMutation({
     mutationFn: async (profileData: Omit<UserProfile, 'id'>) => {
@@ -154,7 +154,7 @@ export const useUserProfile = () => {
   });
 
   // -------------------------------
-  // 🔑 Cambiar contraseña
+  // 🔑 Change password
   // -------------------------------
   const changePassword = useMutation({
     mutationFn: async ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) => {

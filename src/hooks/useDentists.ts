@@ -27,7 +27,7 @@ export const useDentists = (page: number = 1) => {
   const queryClient = useQueryClient();
 
   // -------------------------------
-  // 🔹 Obtener listado de odontólogos
+  // 🔹 Get dentist list
   // -------------------------------
   const fetchDentists = async () => {
     if (!clinicId) return { data: [], count: 0, totalPages: 1 };
@@ -63,7 +63,7 @@ export const useDentists = (page: number = 1) => {
   });
 
   // -------------------------------
-  // 🧠 Helper para obtener IP
+  // 🧠 Helper to get IP
   // -------------------------------
   const getIpAddress = async (): Promise<string> => {
     try {
@@ -76,7 +76,7 @@ export const useDentists = (page: number = 1) => {
   };
 
   // -------------------------------
-  // 🧩 Crear odontólogo
+  // 🧩 Create dentist
   // -------------------------------
   const createDentist = useMutation({
     mutationFn: async (dentistData: Omit<Dentist, 'id'>) => {
@@ -103,13 +103,13 @@ export const useDentists = (page: number = 1) => {
       return data;
     },
     onSuccess: () => {
-      // 🔄 Refresca automáticamente el listado
+      // 🔄 Automatically refreshes list
       queryClient.invalidateQueries({ queryKey: ['dentists', clinicId] });
     },
   });
 
   // -------------------------------
-  // 🧩 Actualizar odontólogo
+  // 🧩 Update dentist
   // -------------------------------
   const updateDentist = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Dentist> }) => {
@@ -141,7 +141,7 @@ export const useDentists = (page: number = 1) => {
   });
 
   // -------------------------------
-  // 🧩 Eliminar (borrado lógico)
+  // 🧩 Delete (logical delete)
   // -------------------------------
   const deleteDentist = useMutation({
     mutationFn: async (id: string) => {
@@ -168,7 +168,7 @@ export const useDentists = (page: number = 1) => {
   });
 
   // -------------------------------
-  // 🔁 Retorno del hook
+  // 🔁 Hook return
   // -------------------------------
   return {
     dentists: data?.data || [],

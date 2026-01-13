@@ -10,7 +10,7 @@ import { useSupabaseUserUpdate } from '@hooks/useSupabaseUserUpdate';
 import { Notifications } from '@/components/Notifications';
 
 
-// ✅ Esquema
+// ✅ Schema
 const clinicSchema = z.object({
   name: z.string().min(2, 'El nombre de la clínica es obligatorio'),
   ruc: z.string().optional(),
@@ -56,7 +56,7 @@ export const ClinicSettings: React.FC = () => {
 
   const onSubmit = async (data: ClinicFormData) => {
     try {
-      // 🧩 Si es ADMIN, su correo y el de la clínica deben ser iguales
+      // 🧩 If ADMIN, their email and clinic email must be the same
       if (isAdmin && data.email && data.email !== clinic?.email) {
         // Actualizar correo en clinic
         await updateClinic.mutateAsync(data);
@@ -85,7 +85,7 @@ export const ClinicSettings: React.FC = () => {
     );
   }
 
-  // 🦷 Dentista: solo visual
+  // 🦷 Dentist: visual only
   const isReadOnly = isDentist;
 
   return (

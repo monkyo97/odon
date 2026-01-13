@@ -30,49 +30,6 @@ function App() {
             <Route path="patients/:id" element={<PatientDetail />} />
             <Route path="dentists" element={<Dentists />} />
           </Route>
-
-          {/* <Route path="/" element={
-            <ProtectedRoute>
-              <Layout>
-                <Dashboard />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/patients" element={
-            <ProtectedRoute>
-              <Layout>
-                <Patients />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/appointments" element={
-            <ProtectedRoute>
-              <Layout>
-                <Appointments />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/settings" element={
-            <ProtectedRoute>
-              <Layout>
-                <Settings />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/patients/:id" element={
-            <ProtectedRoute>
-              <Layout>
-                <PatientDetail />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/dentists" element={
-            <ProtectedRoute>
-              <Layout>
-                <Dentists />
-              </Layout>
-            </ProtectedRoute>
-          } /> */}
         </Routes>
       </Router>
     </AuthProvider>

@@ -18,7 +18,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // 🧾 Colores y etiquetas del estado funcional
+  // 🧾 Colors and functional status labels
   const getStatusColor = (status: string) => {
     return appointmentColors[status as keyof typeof appointmentColors] || 'bg-gray-100 text-gray-800';
   };
@@ -27,12 +27,12 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
     return appointmentStatuses.find(s => s.value === status)?.label || status;
   };
 
-  // 🗑️ Mostrar modal de confirmación
+  // 🗑️ Show confirmation modal
   const handleDeleteAppointment = () => {
     setIsConfirmOpen(true);
   };
 
-  // 🔄 Confirmar y ejecutar eliminación
+  // 🔄 Confirm and execute deletion
   const confirmDelete = async () => {
     try {
       setIsDeleting(true);
@@ -50,7 +50,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
   return (
     <>
       <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition">
-        {/* Encabezado */}
+        {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="text-lg font-semibold text-gray-800">
@@ -70,11 +70,11 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
           </span>
         </div>
 
-        {/* Información de la cita */}
+        {/* Appointment info */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 text-sm text-gray-600">
           <div className="flex items-center">
             <Calendar className="h-4 w-4 mr-2" />
-            {formatDate(appointment.date)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
+            {formatDate(appointment.date)} {/* Here is date show 'dd/MM/yyyy' format*/}
           </div>
           <div className="flex items-center">
             <Clock className="h-4 w-4 mr-2" />
@@ -86,7 +86,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
           </div>
         </div>
 
-        {/* Procedimiento y notas */}
+        {/* Procedure and notes */}
         <div className="mt-3">
           <p className="text-sm font-medium text-gray-900">
             {appointment.procedure}
@@ -96,7 +96,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
           )}
         </div>
 
-        {/* Acciones */}
+        {/* Actions */}
         <div className="flex items-center space-x-3 mt-4">
           <button
             onClick={() => setIsEditModalOpen(true)}
@@ -119,7 +119,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
         </div>
       </div>
 
-      {/* Modal de edición */}
+      {/* Edit modal */}
       {isEditModalOpen && (
         <EditAppointmentModal
           isOpen={isEditModalOpen}
@@ -131,7 +131,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({ appointment })
         />
       )}
 
-      {/* Modal de confirmación */}
+      {/* Confirmation modal */}
       <ConfirmModal
         isOpen={isConfirmOpen}
         title="Cancelar cita"

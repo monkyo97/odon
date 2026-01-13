@@ -22,20 +22,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  // 📅 Obtener citas para un slot
+  // 📅 Get appointments for a slot
   const getAppointmentsForSlot = (time: string) =>
     appointments.filter((apt) => apt.time === time && apt.date === selectedDate);
 
-  // 🔄 Calcular cuántos slots ocupa una cita
+  // 🔄 Calculate how many slots an appointment occupies
   const getSlotCount = (duration: number) => Math.ceil(duration / 30);
 
-  // ⚡ Manejar clic en hora disponible
+  // ⚡ Handle click on available slot
   const handleAvailableSlotClick = (time: string) => {
     setSelectedSlot(time);
     setIsCreateModalOpen(true);
   };
 
-  // 🚫 Evitar render duplicado de slots ocupados
+  // 🚫 Avoid duplicate render of occupied slots
   const isSlotWithinAppointment = (time: string) => {
     return appointments.some((apt) => {
       const startIndex = timeSlots.indexOf(apt.time);
@@ -55,12 +55,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       {/* 🔹 Header */}
       {/* 🔹 Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between sm:space-y-0 space-y-3 text-center sm:text-left">
-        {/* Fecha */}
+        {/* Date */}
         <h3 className="text-lg sm:text-xl font-semibold text-gray-900 order-1 sm:order-none uppercase">
-          {formatGroupDate(selectedDate)} {/* Aqui hay fecha mostrar formato 'dd/MM/yyyy'*/}
+          {formatGroupDate(selectedDate)} {/* Here is date show 'dd/MM/yyyy' format*/}
         </h3>
 
-        {/* Leyendas de estados */}
+        {/* Status legends */}
         <div className="flex flex-col sm:flex-row sm:space-x-3 space-y-2 sm:space-y-0 justify-center sm:justify-end text-sm order-2 sm:order-none">
           <Legend color="bg-green-300" label="Confirmada" />
           <Legend color="bg-blue-300" label="Programada" />
@@ -70,10 +70,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
 
-      {/* 🔹 Horario */}
+      {/* 🔹 Schedule */}
       <div className="grid grid-cols-1 gap-2">
         {timeSlots.map((time) => {
-          // Evita renderizar un slot intermedio de una cita más larga
+          // Avoid rendering an intermediate slot of a longer appointment
           if (isSlotWithinAppointment(time)) return null;
 
           const slotAppointments = getAppointmentsForSlot(time);
@@ -81,10 +81,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
           return (
             <div key={time} className="flex items-start">
-              {/* Hora lateral */}
+              {/* Sidebar time */}
               <div className="w-16 text-sm text-gray-500 font-medium mt-1">{time}</div>
 
-              {/* Contenedor de citas */}
+              {/* Appointment container */}
               <div className="flex-1 ml-4">
                 {isEmpty ? (
                   <div
@@ -108,7 +108,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         })}
       </div>
 
-      {/* Modal creación */}
+      {/* Creation modal */}
       {isCreateModalOpen && (
         <AppointmentModal
           isOpen={isCreateModalOpen}

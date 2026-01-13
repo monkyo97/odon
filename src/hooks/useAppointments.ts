@@ -66,7 +66,7 @@ export const useAppointments = (initialPage: number = 1, patientId?: string) => 
   }, [filters.status, filters.dentistId, filters.date, filters.procedure]);
 
   // -------------------------------
-  // 🔹 Obtener listado de citas
+  // 🔹 Get appointment list
   // -------------------------------
   const fetchAppointments = async () => {
     if (!clinicId) return { data: [], count: 0, totalPages: 1 };
@@ -85,7 +85,7 @@ export const useAppointments = (initialPage: number = 1, patientId?: string) => 
         )`, { count: 'exact' })
       .eq('clinic_id', clinicId);
 
-    // 🧠 Si hay patientId, filtramos por él (Client-Specific)
+    // 🧠 If patientId exists, filter by it (Client-Specific)
     if (patientId) {
       query = query.eq('patient_id', patientId);
     }
@@ -126,7 +126,7 @@ export const useAppointments = (initialPage: number = 1, patientId?: string) => 
       query = query.ilike('procedure', `%${filters.procedure}%`);
     }
 
-    // Traemos en orden descendente de fecha y hora
+    // Order descending by date and time
     const { data, error, count } = await query
       .order('date', { ascending: false })
       .order('time', { ascending: false })

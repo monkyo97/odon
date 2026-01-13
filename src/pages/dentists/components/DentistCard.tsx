@@ -9,11 +9,11 @@ interface DentistCardProps {
 }
 
 export const DentistCard: React.FC<DentistCardProps> = ({ dentist }) => {
-  // ✅ No es necesario pasar props al hook, React Query maneja el estado global
+  // ✅ No need to pass props to the hook, React Query handles global state
   const { updateDentist } = useDentists();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // 🧩 Actualizar odontólogo
+  // 🧩 Update dentist
   const handleUpdate = async (data: Partial<Dentist>) => {
     try {
       await updateDentist.mutateAsync({ id: dentist.id, updates: data });
@@ -37,11 +37,11 @@ export const DentistCard: React.FC<DentistCardProps> = ({ dentist }) => {
             </div>
           </div>
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${dentist.status === '1'
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-red-100 text-red-800'
             }`}>
             {dentist.status === '1' ? 'Activo' : 'Inactivo'}
-            
+
           </span>
         </div>
         <div className="space-y-2 mb-2">
@@ -68,7 +68,7 @@ export const DentistCard: React.FC<DentistCardProps> = ({ dentist }) => {
         </div>
       </div>
 
-      {/* Modal de edición */}
+      {/* Edit modal */}
       {isEditModalOpen && (
         <EditDentistModal
           isOpen={isEditModalOpen}

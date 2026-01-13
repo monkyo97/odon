@@ -9,7 +9,7 @@ import { useUserProfile } from '@hooks/useUserProfile';
 import { especialities } from '../../../constants/globalConstants';
 import { Notifications } from '@/components/Notifications';
 
-// ✅ Validación con Zod
+// ✅ Zod validation
 const profileSchema = z.object({
   name: z.string().min(2, 'El nombre es obligatorio'),
   email: z.string().email('Correo inválido'),

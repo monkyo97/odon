@@ -13,14 +13,14 @@ export const Patients: React.FC = () => {
     page,
     totalPages,
     totalPatients,
-    fetchPatients,   // <- solo lo usamos en los botones
+    fetchPatients,   // <- only used in buttons
     createPatient,
   } = usePatients();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Derivar datos sin setState (useMemo evita recalcular en cada render)
+  // Derive data without setState (useMemo prevents recalculation on every render)
   const filteredPatients = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) return patients;
@@ -58,7 +58,7 @@ export const Patients: React.FC = () => {
         </button>
       </div>
 
-      {/* Filtros */}
+      {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-4 sm:p-6 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
@@ -79,7 +79,7 @@ export const Patients: React.FC = () => {
           </div>
         </div>
 
-        {/* Lista */}
+        {/* List */}
         <div className="p-4 sm:p-6">
           {loading ? (
             <div className="flex justify-center py-12">
@@ -93,7 +93,7 @@ export const Patients: React.FC = () => {
                 ))}
               </div>
 
-              {/* Paginador (del backend) */}
+              {/* Paginator (from backend) */}
               <div className="flex flex-col items-center justify-center mt-6 space-y-2">
                 <div className="text-xs text-gray-500">
                   {`Total: ${totalPatients} • Página ${page} de ${totalPages} • ${PAGE_SIZE} por página`}

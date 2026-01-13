@@ -25,7 +25,7 @@ export interface Patient {
 
 const PAGE_SIZE = 20;
 
-// 🔹 Calcular edad
+// 🔹 Calculate age
 const calculateAge = (birthDate?: string): number | null => {
   if (!birthDate) return null;
   const birth = new Date(birthDate);
@@ -45,7 +45,7 @@ export const usePatients = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalPatients, setTotalPatients] = useState(0);
 
-  // 🧠 IMPORTANTE: no incluir user en dependencias, solo clinicId
+  // 🧠 IMPORTANT: do not include user in dependencies, only clinicId
   const fetchPatients = useCallback(async (pageNumber: number = 1) => {
     if (!clinicId) return;
     setLoading(true);
@@ -75,15 +75,15 @@ export const usePatients = () => {
   }, [clinicId]);
 
 
-  // 🚀 Ejecutar solo una vez al tener clinicId
+  // 🚀 Execute only once when clinicId is available
   useEffect(() => {
     if (!clinicId) return;
-    // no llames setState aquí basado en algo que cambie en cada render
-    fetchPatients(1); // OK: fetchPatients es estable porque solo depende de clinicId
+    // do not call setState here based on something that changes on every render
+    fetchPatients(1); // OK: fetchPatients is stable because it only depends on clinicId
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clinicId]);
 
-  // 🧮 Crear paciente
+  // 🧮 Create patient
   const createPatient = async (patientData: any) => {
     if (!clinicId || !user) return;
 
@@ -133,7 +133,7 @@ export const usePatients = () => {
     }
   };
 
-  // 🔹 Actualizar
+  // 🔹 Update
   const updatePatient = async (id: string, updates: Partial<Patient>) => {
     if (!user || !clinicId) return;
 
@@ -177,7 +177,7 @@ export const usePatients = () => {
     }
   };
 
-  // 🔹 Inactivar
+  // 🔹 Inactivate
   const deletePatient = async (id: string) => {
     if (!user || !clinicId) return;
 

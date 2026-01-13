@@ -23,7 +23,7 @@ import { Appointment } from '@hooks/useAppointments';
 import { appointmentDurations, appointmentStatuses, procedures, timeSlots } from '../../../constants/constantsAppointments';
 import { Notifications } from '@/components/Notifications';
 
-// ✅ Validación con Zod
+// ✅ Zod validation
 const appointmentSchema = z.object({
   patient_id: z.string().optional(),
   patient_name: z.string().min(2, 'El nombre del paciente es obligatorio'),
@@ -95,11 +95,11 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     },
   });
 
-  // 🧠 Efecto para cargar datos al editar o preseleccionar paciente
+  // 🧠 Effect to load data when editing or preselecting patient
   useEffect(() => {
     if (isOpen) {
       if (appointmentToEdit) {
-        // Modo Edición
+        // Edit Mode
         setIsNewPatient(false);
         setValue('patient_id', appointmentToEdit.patient_id);
         setValue('patient_name', appointmentToEdit.patient_name || '');
@@ -113,7 +113,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         setValue('status_appointments', appointmentToEdit.status_appointments);
         setSearchTerm(appointmentToEdit.patient_name || '');
       } else if (preselectedPatientId) {
-        // Modo Nuevo con Paciente Preseleccionado
+        // New Mode with Preselected Patient
         const patient = patients.find(p => p.id === preselectedPatientId);
         if (patient) {
           setIsNewPatient(false);
@@ -129,7 +129,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         }
         setValue('status_appointments', 'scheduled');
       } else {
-        // Modo Nuevo (Reset)
+        // New Mode (Reset)
         reset({
           duration: 60,
           status: '1',
@@ -147,7 +147,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
 
   if (!isOpen) return null;
 
-  // 🔍 Filtrar pacientes por nombre o teléfono
+  // 🔍 Filter patients by name or phone
   const filteredPatients = searchTerm
     ? patients.filter(
       (p) =>
@@ -156,7 +156,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     )
     : patients;
 
-  // 📋 Selección de paciente existente
+  // 📋 Selection of existing patient
   const handlePatientSelect = (patient: any) => {
     setIsNewPatient(false);
     setValue('patient_id', patient.id);
@@ -165,10 +165,10 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     setSearchTerm(patient.name);
   };
 
-  // 💾 Enviar formulario
+  // 💾 Submit form
   const onSubmit = async (data: AppointmentFormData) => {
     try {
-      // Si estamos editando, pasamos el ID también (aunque onSave suele esperar solo data, el padre manejará la lógica)
+      // If editing, we pass the ID too (although onSave usually expects only data, parent handles logic)
       const payload = appointmentToEdit ? { id: appointmentToEdit.id, updates: data } : data;
 
       await onSave(payload);
@@ -200,9 +200,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
           </button>
         </div>
 
-        {/* Formulario */}
+        {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
-          {/* Radio: paciente nuevo (Solo si no hay paciente preseleccionado ni estamos editando) */}
+          {/* Radio: new patient (Only if no patient preselected and not editing) */}
           {!preselectedPatientId && !appointmentToEdit && (
             <FormRadioGroup
               label="¿Es paciente nuevo?"
@@ -220,7 +220,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Paciente */}
+            {/* Patient */}
             {isNewPatient ? (
               <FormInput
                 label="Nombre del paciente *"
@@ -253,7 +253,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               />
             )}
 
-            {/* Teléfono */}
+            {/* Phone */}
             <FormInput
               label="Teléfono"
               iconLeft={<Phone className="h-4 w-4" />}
@@ -263,14 +263,14 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               disabled={!isNewPatient && !preselectedPatientId && !appointmentToEdit}
             />
 
-            {/* Fecha */}
+            {/* Date */}
             <FormDateInput
               label="Fecha *"
               registration={register('date')}
               error={errors.date}
             />
 
-            {/* Hora */}
+            {/* Time */}
             <FormSelect
               label="Hora *"
               iconLeft={<Clock className="h-4 w-4" />}
@@ -280,7 +280,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               placeholder="Seleccionar hora"
             />
 
-            {/* Duración */}
+            {/* Duration */}
             <FormSelect
               label="Duración (minutos) *"
               registration={register('duration', { valueAsNumber: true })}
@@ -288,7 +288,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               options={appointmentDurations}
             />
 
-            {/* Odontólogo */}
+            {/* Dentist */}
             <FormSelect
               label="Odontólogo *"
               iconLeft={<Briefcase className="h-4 w-4" />}
@@ -305,7 +305,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               placeholder="Seleccionar odontólogo"
             />
 
-            {/* Estado funcional */}
+            {/* Functional status */}
             <FormSelect
               label="Estado de la cita *"
               registration={register('status_appointments', { required: true })}
@@ -314,7 +314,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             />
           </div>
 
-          {/* Procedimiento */}
+          {/* Procedure */}
           <FormSelect
             label="Procedimiento *"
             registration={register('procedure')}
@@ -323,7 +323,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             placeholder="Seleccionar procedimiento"
           />
 
-          {/* Notas */}
+          {/* Notes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Notas
@@ -339,7 +339,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             </div>
           </div>
 
-          {/* Botones */}
+          {/* Buttons */}
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"

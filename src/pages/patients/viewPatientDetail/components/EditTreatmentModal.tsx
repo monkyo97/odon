@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, FileText, DollarSign, Clock, User } from 'lucide-react';
 import { useDentists } from '../../../../hooks/useDentists';
-import type { Treatment } from './TreatmentHistory';
 import { TREATMENT_STATUSES, STATUS_LABELS, SURFACE_IDS } from '@/constants/odontogram';
 import { FormDateInput } from '@/components/FormDateInput';
+import { Treatment } from '@/hooks/useTreatments';
 
 interface EditTreatmentModalProps {
   isOpen: boolean;

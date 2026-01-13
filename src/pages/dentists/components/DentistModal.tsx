@@ -8,7 +8,7 @@ import { Notifications } from '@/components/Notifications';
 import { FormSelect } from '@/components/FormSelect';
 import { especialities } from '@/constants/globalConstants';
 
-// 🧠 Validación con Zod
+// 🧠 Zod validation
 const dentistSchema = z.object({
   name: z.string().min(3, 'El nombre es obligatorio'),
   email: z.string().email('Correo inválido'),
@@ -43,7 +43,7 @@ export const DentistModal: React.FC<DentistModalProps> = ({ isOpen, onClose, onS
   });
 
   if (!isOpen) return null;
-  
+
   const onSubmit = async (data: DentistFormData) => {
     try {
       await onSave(data);
@@ -70,7 +70,7 @@ export const DentistModal: React.FC<DentistModalProps> = ({ isOpen, onClose, onS
           </button>
         </div>
 
-        {/* Formulario */}
+        {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
           <div className="grid grid-cols-1 gap-4">
             <FormInput
@@ -133,7 +133,7 @@ export const DentistModal: React.FC<DentistModalProps> = ({ isOpen, onClose, onS
             /> */}
           </div>
 
-          {/* Botones */}
+          {/* Buttons */}
           <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
             <button
               type="button"
