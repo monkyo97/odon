@@ -52,10 +52,10 @@ Este MVP fue diseñado para **demostrar habilidades técnicas** como arquitectur
 
 ## 🧪 Usuario de Prueba
 
-Credenciales de demostración (pueden no estar habilitadas en todos los entornos):
+Credenciales de demostración:
 
-- **Email:** `demo@odon.com`
-- **Contraseña:** `demo123`
+- **Email:** `cmoncayo1033@gmail.com`
+- **Contraseña:** `mc123456`
 
 ---
 
@@ -95,6 +95,9 @@ VITE_SUPABASE_ANON_KEY=tu-clave-anonima-publica
 
 ---
 ## ▶️ Ejecución en Desarrollo
+
+### Versión Node.js
+Recomiendo usar Node.js v20.18.0 o superior.
 
 ### Instalar dependencias
 npm install

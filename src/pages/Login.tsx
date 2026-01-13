@@ -7,26 +7,14 @@ export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { user, login } = useAuth();
+  const { user, loginMutation } = useAuth();
 
   // If already logged in, redirect to home
   if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-
-    const { error } = await login(email, password);
-
-    if (error) {
-      setError('Credenciales incorrectas. Intenta nuevamente.');
-    }
-
-    setIsSubmitting(false);
+    loginMutation.mutate({ email, password });
   };
 
   return (
@@ -83,21 +71,21 @@ export const Login: React.FC = () => {
               </div>
             </div>
 
-            {error && (
+            {loginMutation.isError && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {error}
+                Credenciales incorrectas. Intenta nuevamente.
               </div>
             )}
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={loginMutation.isPending}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              {loginMutation.isPending ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </button>
           </form>
-          <div className="mt-6 text-center">
+          {/* <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
               ¿No tienes una cuenta?{' '}
               <Link to="/register" className="text-blue-600 hover:text-blue-800 font-medium">
@@ -107,7 +95,7 @@ export const Login: React.FC = () => {
             <p className="text-xs text-gray-400 mt-2">
               Example: doctor@dental.com / password
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

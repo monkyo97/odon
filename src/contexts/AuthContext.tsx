@@ -206,8 +206,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+import { useMutation } from '@tanstack/react-query';
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth debe usarse dentro de AuthProvider');
-  return context;
+
+  const loginMutation = useMutation({
+    mutationFn: async ({ email, password }: { email: string; password: string }) => {
+      const { user, error } = await context.login(email, password);
+      if (error) throw error;
+      return user;
+    },
+  });
+
+  return { ...context, loginMutation };
 };

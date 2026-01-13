@@ -5,6 +5,7 @@ import { useTreatments, Treatment } from '../../../../hooks/useTreatments';
 import { TreatmentModal } from './TreatmentModal';
 import { EditTreatmentModal } from './EditTreatmentModal';
 import { TREATMENT_STATUSES, STATUS_LABELS } from '@/constants/odontogram';
+import { TREATMENT_STATUS_COLORS, DEFAULT_STATUS_COLOR } from '@/constants/treatmentConstants';
 import { Notifications } from '@/components/Notifications';
 import { useDentists } from '@/hooks/useDentists';
 
@@ -95,12 +96,7 @@ export const TreatmentHistory: React.FC<TreatmentHistoryProps> = ({ patientId, d
   };
 
   const getStatusColor = (status: string) => {
-    const colors = {
-      [TREATMENT_STATUSES.COMPLETED]: 'bg-green-100 text-green-800 border-green-200',
-      [TREATMENT_STATUSES.IN_PROGRESS]: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      [TREATMENT_STATUSES.PLANNED]: 'bg-blue-100 text-blue-800 border-blue-200'
-    };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
+    return TREATMENT_STATUS_COLORS[status as keyof typeof TREATMENT_STATUS_COLORS] || DEFAULT_STATUS_COLOR;
   };
 
   const getStatusLabel = (status: string) => {
