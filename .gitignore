@@ -23,7 +23,7 @@ package-lock.json
 *.njsproj
 *.sln
 *.sw?
-.env
+#.env
 
 db
 prompt
